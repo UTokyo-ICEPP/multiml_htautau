@@ -1,0 +1,106 @@
+seed: &seed 1
+
+dataset:
+  name: OnlyDiTauDataset_wo_mass
+  params:
+    # max_events = 83980
+    max_events: 50000
+    data_path: '../../../data/raw/onlyDiTau/'
+
+n_jets: &n_jets 2
+n_intermediate_vars: &n_intermediate_vars 6
+
+sub_task_params:
+  tau4vec:
+    tasks:
+      - name: Tau4vec_MLPTask
+        params:
+          layers_images: [768, 16, 16, 16, 4]
+          layers_calib: [8, 32, 32, 3]
+          activation: 'ReLU'
+          batch_norm: False
+      - name: Tau4vec_Conv2DTask
+        params:
+          layers_conv2d:
+            -
+              - 'conv2d'
+              - {'in_channels': 3, 'out_channels': 32, 'kernel_size': 3}
+            -
+              - 'conv2d'
+              - {'in_channels': 32, 'out_channels': 16, 'kernel_size': 3}
+            -
+              - 'maxpooling2d'
+              - {}
+            -
+              - 'conv2d'
+              - {'in_channels': 16, 'out_channels': 16, 'kernel_size': 2}
+            -
+              - 'conv2d'
+              - {'in_channels': 16, 'out_channels': 8, 'kernel_size': 2}
+          layers_images: [128, 16, 16, 16, 4]
+          layers_calib: [8, 64, 64, 64, 3]
+          activation: 'ReLU'
+          batch_norm: False
+      - name: Tau4vec_SFTask
+        params:
+          n_input_vars: 8
+          n_output_vars: *n_intermediate_vars
+          n_jets: *n_jets
+    pretrain:
+      epochs: 100
+      optimizer:
+        name: Adam
+        params:
+          lr: 1.0e-3
+      loss_func:
+        name: Tau4vecCalibLoss_torch
+      metrics:
+        name: Calc_R2
+        params:
+          multioutput: variance_weighted
+      activation:
+        name: False
+      data:
+        input_key: inputs
+        target_key: internal_vec
+      patience: 10
+  higgsId:
+    tasks:
+      - name: HiggsID_MLPTask
+        params:
+          layers: [6, 32, 32, 32, 1]
+          activation: 'ReLU'
+          activation_last: 'Identity'
+          batch_norm: False
+      - name: HiggsID_LSTMTask
+        params:
+          layers_lstm: [3, 32, 32, 32, 1]
+          layers_mlp: [1, 1]
+          activation_last: 'Identity'
+          batch_norm: False
+          n_jets: *n_jets
+      - name: HiggsID_MassTask
+        params:
+          layers: [1, 64, 64, 1]
+          activation: 'ReLU'
+          activation_last: 'Identity'
+          batch_norm: False
+          scale_mass: 0.008     # 1./125.
+          n_jets: *n_jets
+          n_input_vars: *n_intermediate_vars
+    pretrain:
+      epochs: 100
+      optimizer:
+        name: Adam
+        params:
+          lr: 1.0e-3
+      loss_func:
+        name: BCEWithLogitsLoss
+      metrics:
+        name: Calc_Auc
+      activation:
+        name: Sigmoid
+      data:
+        input_key: inputs
+        target_key: internal_label
+      patience: 10
