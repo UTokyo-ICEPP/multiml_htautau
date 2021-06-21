@@ -1,12 +1,13 @@
-seed: &seed 1
-log_level: 10
+seed: &seed 0
+#log_level: 40 # ERROR
+log_level: 20
 
 dataset:
   name: OnlyDiTauDataset_wo_mass
   params:
-    # max_events = 83980
-    max_events: 500
-    data_path: '../../../data/raw/onlyDiTau/'
+    # max_events is 50000 + 50000 events
+    max_events: 50000
+    data_path: '/data/saito/dataset/onlyDiTau/'
 
 n_jets: &n_jets 2
 n_intermediate_vars: &n_intermediate_vars 6
@@ -106,7 +107,7 @@ sub_task_params:
         target_key: internal_label
       patience: 10
 
-SPOS_NAS:
+ASNG_NAS:
   epochs: 100
   loss_first:
     name: Tau4vecCalibLoss_torch

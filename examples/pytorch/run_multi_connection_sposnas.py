@@ -77,7 +77,7 @@ def main(conf: str,
             freeze_model_weights=False,
             do_pretraining=not nopretraining,
             connectiontask_args={
-                "num_epochs": 100,
+                "num_epochs": epoch,
                 "max_patience": 10,
                 "batch_size": 100,
                 "load_weights": load_weights,
@@ -102,6 +102,9 @@ def main(conf: str,
         with open(f"{saver.save_dir}/timer.pkl", 'wb') as f:
             import pickle
             pickle.dump(timer_reg, f)
+    
+    
+    
 
 
 if __name__ == '__main__':

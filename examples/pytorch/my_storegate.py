@@ -5,6 +5,8 @@ import numpy as np
 
 def get_storegate(data_path='/tmp/onlyDiTau/', max_events=50000):
     # Index for signal/background shuffle
+    
+    
     cur_seed = np.random.get_state()
     np.random.seed(1)
     permute = np.random.permutation(2 * max_events)
@@ -48,11 +50,12 @@ def get_storegate(data_path='/tmp/onlyDiTau/', max_events=50000):
 
 
     # Setting labels
+    
     labels = np.concatenate([
         np.ones(max_events),
         np.zeros(max_events),
     ])[permute]
-
+    
     storegate.update_data(
         data=labels,
         var_names='label',
@@ -60,6 +63,6 @@ def get_storegate(data_path='/tmp/onlyDiTau/', max_events=50000):
     )
 
     storegate.compile()
-    storegate.show_info()
+    # storegate.show_info()
 
     return storegate
