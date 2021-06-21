@@ -49,11 +49,12 @@ def get_higgsId_subtasks(saver,
         'optimizer_args': dict(lr=1e-3),
         'num_epochs': 100,
         "max_patience": 10,
-        'batch_size': 100,
+        'batch_size': 64,
         'save_weights': True,
         'load_weights': False,
         'device': device,
         'view_as_outputs': True,
+        'verbose':2,        
     }
     if load_weights:
         higgsId_args['load_weights'] = True
@@ -134,11 +135,12 @@ def get_tau4vec_subtasks(saver,
         'loss': Tau4vecCalibLoss_torch(pt_scale=1e-2, use_pxyz=True),
         'num_epochs': 100,
         "max_patience": 10,
-        'batch_size': 100,
+        'batch_size': 64,
         'save_weights': True,
         'load_weights': False,
         'device': device,
         'view_as_outputs': True,
+        'verbose':2,
     }
     if load_weights:
         tau4vec_args['load_weights'] = True
