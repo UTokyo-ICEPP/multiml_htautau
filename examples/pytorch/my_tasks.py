@@ -53,7 +53,6 @@ def get_higgsId_subtasks(saver,
         'save_weights': True,
         'load_weights': False,
         'device': device,
-        'view_as_outputs': True,
         'verbose':2,        
     }
     if load_weights:
@@ -139,7 +138,6 @@ def get_tau4vec_subtasks(saver,
         'save_weights': True,
         'load_weights': False,
         'device': device,
-        'view_as_outputs': True,
         'verbose':2,
     }
     if load_weights:

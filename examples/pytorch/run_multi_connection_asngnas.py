@@ -102,7 +102,7 @@ def main(conf: str,
             batch_size = {'type':'equal_length', 'length':1000, 'test' : 100},
             lam = lam,
             delta_init_factor = delta,
-            alpha = alpha,
+            #alpha = alpha,
             # BaseAgent
             saver=saver,
             storegate=storegate,
@@ -126,8 +126,7 @@ def main(conf: str,
                 "variable_mapping": mapping_truth_corr,
                 "device": DEVICE,
                 "verbose":verbose,
-                "unpack_inputs": False,
-                'metrics':['subloss', 'auc'],
+                'metrics':['loss', 'subloss', 'auc'],
                 
             }
         )
