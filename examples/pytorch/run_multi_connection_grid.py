@@ -17,7 +17,7 @@ else:
 @click.option('--gpu_index', '-gi', type=int, default=None)
 @click.option('--data_path', '-dp', type=str, default=None)
 @click.option('--event', '-e', type=int, default=None)
-@click.option('--weight', '-w', type=float, default=0.0)
+@click.option('--weight', '-w', type=float, default=0.5)
 @click.option('--load_weights', '-lw', type=bool, default=False)
 @click.option('--nopretraining', '-np', type=bool, default=False)
 def main(conf: str,
@@ -49,8 +49,8 @@ def main(conf: str,
         save_dir=save_dir,
         config=config,
         device=DEVICE,
-        tau4vec_tasks=['MLP', 'conv2D', 'SF'],
-        higgsId_tasks=['mlp', 'lstm', 'mass'],
+        tau4vec_tasks=['conv2D', 'MLP', 'SF'],
+        higgsId_tasks=['lstm', 'mlp', 'mass'],
     )
 
     # Time measurements

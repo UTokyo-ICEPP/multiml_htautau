@@ -112,7 +112,7 @@ class Tau4vecCalibLoss_torch(object):
             >>> pmse(output, target)
             tensor(0.0089)
     """
-    __name__ = 'Tau4vecCalibLoss_torch'
+    __name__ = 'Tau4vecCalibLoss_torch_test'
 
     def __init__(self,
                  pt_scale: float = 1e-2,
@@ -171,7 +171,7 @@ class Tau4vecCalibLoss_torch(object):
             output = self._convert_to_pxyz(output)
             target = self._convert_to_pxyz(target)
             return (target - output).pow(2).mean()
-
+            
         else:
             d_sq = (target - output).pow(2)
             d_phi = (
@@ -181,4 +181,5 @@ class Tau4vecCalibLoss_torch(object):
                 [d_sq[:, 0:2], d_phi.unsqueeze(1)],
                 axis=-1
             )
-            return diff.mean()
+            return diff.mean() 
+

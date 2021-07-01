@@ -15,13 +15,13 @@ n_intermediate_vars: &n_intermediate_vars 6
 sub_task_params:
   tau4vec:
     tasks:
-      - name: Tau4vec_MLPTask
+      Tau4vec_MLPTask:
         params:
           layers_images: [768, 16, 16, 16, 4]
           layers_calib: [8, 32, 32, 3]
           activation: 'ReLU'
           batch_norm: False
-      - name: Tau4vec_Conv2DTask
+      Tau4vec_Conv2DTask:
         params:
           layers_conv2d:
             -
@@ -43,13 +43,15 @@ sub_task_params:
           layers_calib: [8, 64, 64, 64, 3]
           activation: 'ReLU'
           batch_norm: False
-      - name: Tau4vec_SFTask
+      Tau4vec_SFTask:
         params:
           n_input_vars: 8
           n_output_vars: *n_intermediate_vars
           n_jets: *n_jets
     pretrain:
       epochs: 100
+      patience: 10
+      batch_size: 128
       optimizer:
         name: Adam
         params:
@@ -65,23 +67,23 @@ sub_task_params:
       data:
         input_key: inputs
         target_key: internal_vec
-      patience: 10
+      verbose: 1
   higgsId:
     tasks:
-      - name: HiggsID_MLPTask
+      HiggsID_MLPTask:
         params:
           layers: [6, 32, 32, 32, 1]
           activation: 'ReLU'
           activation_last: 'Identity'
           batch_norm: False
-      - name: HiggsID_LSTMTask
+      HiggsID_LSTMTask:
         params:
           layers_lstm: [3, 32, 32, 32, 1]
           layers_mlp: [1, 1]
           activation_last: 'Identity'
           batch_norm: False
           n_jets: *n_jets
-      - name: HiggsID_MassTask
+      HiggsID_MassTask:
         params:
           layers: [1, 64, 64, 1]
           activation: 'ReLU'
@@ -92,6 +94,8 @@ sub_task_params:
           n_input_vars: *n_intermediate_vars
     pretrain:
       epochs: 100
+      patience: 10
+      batch_size: 128
       optimizer:
         name: Adam
         params:
@@ -105,10 +109,11 @@ sub_task_params:
       data:
         input_key: internal_vec
         target_key: internal_label
-      patience: 10
-
-ASNG_NAS:
+      verbose: 1
+ASNG:
   epochs: 100
+  batch_size: {'type':'equal_length', 'length':500, 'test' : 250}
+  patience: 10
   loss_first:
     name: Tau4vecCalibLoss_torch
   loss_second:
@@ -120,15 +125,34 @@ ASNG_NAS:
   scheduler:
     name: MultiStepLR
     params:
-      milestones: [5000, 10000]
+      milestones: [50, 100]
       gamma: 1.0                # 1倍のことなので変化されない
   data:
     input_key: inputs
     target_key: targets
-  patience: 20
+  asng_args : 
+    alpha: 4.0
+    lam: 2
+    delta: 0.0
+    clip: 10
+    range_restriction: True 
+    clipping_value: 10.0
+  connectiontask_args:
+    num_epochs: 1
+    max_patience: 10
+    batch_size: 100
+    load_weights: False
+    optimizer: 'Adam'
+    optimizer_args: 
+      lr: 1.0e-3
+    verbose: 1
+    metrics: ['subloss', 'auc', 'loss']
+    phases: ['train', 'valid', 'test']
+    variable_mapping: None
+    device: None
 
 re_train:
-  epochs: 100
+  epochs: 1
   optimizer:
     name: Adam
     params:
@@ -141,4 +165,4 @@ re_train:
   data:
     input_key: inputs
     target_key: targets
-  patience: 5
+  patience: 10
