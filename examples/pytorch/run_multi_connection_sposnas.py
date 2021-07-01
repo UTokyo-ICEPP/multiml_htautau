@@ -88,7 +88,6 @@ def main(conf: str,
                 "optimizer_args": dict(lr=1e-3),
                 "variable_mapping": mapping_truth_corr,
                 "device": DEVICE,
-                "unpack_inputs": False,
             }
         )
 

@@ -28,34 +28,41 @@ def preprocessing(save_dir,
     task_scheduler = TaskScheduler()
 
     if len(tau4vec_tasks) > 0 and len(higgsId_tasks) > 0:
-        subtask1 = get_higgsId_subtasks(saver,
+        subtask1 = get_higgsId_subtasks(config.sub_task_params.higgsId,
+                                        saver,
                                         device=device,
                                         subtask_names=higgsId_tasks,
                                         truth_input=truth_intermediate_inputs,
-                                        load_weights=load_weights)
+                                        load_weights=load_weights,
+                                        use_logits = True)
         task_scheduler.add_task(task_id='higgsId',
                                 parents=['tau4vec'],
                                 children=[],
                                 subtasks=subtask1)
 
-        subtask2 = get_tau4vec_subtasks(saver,
+        subtask2 = get_tau4vec_subtasks(config.sub_task_params.tau4vec,
+                                        saver,
                                         subtask_names=tau4vec_tasks,
                                         device=device,
                                         load_weights=load_weights)
+                                        
         task_scheduler.add_task(task_id='tau4vec',
                                 parents=[],
                                 children=['higgsId'],
                                 subtasks=subtask2)
 
     elif len(higgsId_tasks) > 0:
-        subtask = get_higgsId_subtasks(saver,
+        subtask = get_higgsId_subtasks(config.sub_task_params.higgsId,
+                                       saver,
                                        device=device,
                                        subtask_names=higgsId_tasks,
-                                       load_weights=load_weights)
+                                       load_weights=load_weights,
+                                       use_logits = True)
         task_scheduler.add_task(task_id='higgsId', subtasks=subtask)
 
     elif len(tau4vec_tasks) > 0:
-        subtask = get_tau4vec_subtasks(saver,
+        subtask = get_tau4vec_subtasks(config.sub_task_params.tau4vec,
+                                       saver,
                                        subtask_names=tau4vec_tasks,
                                        device=device,
                                        load_weights=load_weights)
