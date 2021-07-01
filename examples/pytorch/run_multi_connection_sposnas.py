@@ -19,6 +19,7 @@ else:
 @click.option('--event', '-e', type=int, default=None)
 @click.option('--weight', '-w', type=float, default=0.0)
 @click.option('--load_weights', '-lw', type=bool, default=False)
+@click.option('--epoch', '-ep', type=int, default=100)
 @click.option('--nopretraining', '-np', type=bool, default=False)
 def main(conf: str,
          seed: int,
@@ -27,6 +28,7 @@ def main(conf: str,
          event: int,
          weight: float,
          load_weights: bool,
+         epoch: int,
          nopretraining: bool):
     global DEVICE
     from utils import load_config
@@ -82,7 +84,6 @@ def main(conf: str,
                 "batch_size": 100,
                 "load_weights": load_weights,
                 "phases": phases,
-                "use_multi_loss": use_multi_loss,
                 "loss_weights": loss_weights,
                 "optimizer": "Adam",
                 "optimizer_args": dict(lr=1e-3),

@@ -52,7 +52,6 @@ with timer(timer_reg, "initialize"):
             "save_weights": not args.load_weights,
             "load_weights": args.load_weights,
             "phases": ["test"] if args.load_weights else None,
-            "use_multi_loss": use_multi_loss,
             "loss_weights": loss_weights,
             "optimizer": "adam",
             "optimizer_args": dict(learning_rate=1e-3),
