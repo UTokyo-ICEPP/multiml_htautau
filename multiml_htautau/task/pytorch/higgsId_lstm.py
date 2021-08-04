@@ -1,7 +1,8 @@
 from torch.nn import Module
 from torch import transpose
-from multiml.task.pytorch.modules import LSTMBlock
-from multiml.task.pytorch.modules import MLPBlock
+from multiml.task.pytorch.modules import LSTMBlock, LSTMBlock_HPS
+from multiml.task.pytorch.modules import MLPBlock, MLPBlock_HPS
+from multiml import Hyperparameters
 
 from . import HiggsID_BaseTask
 
@@ -9,9 +10,13 @@ from . import HiggsID_BaseTask
 class HiggsID_LSTMTask(HiggsID_BaseTask):
     ''' HiggsID LSTM task
     '''
-    def __init__(self, layers_lstm=None,
-                 layers_mlp=None, activation_last=None,
-                 batch_norm=False, n_jets=2,
+    def __init__(self, 
+                 hps = None, 
+                #  layers_lstm=None,
+                #  layers_mlp=None, 
+                #  activation_last=None,
+                #  batch_norm=False, 
+                 n_jets=2, 
                  **kwargs):
         """
 
@@ -25,47 +30,51 @@ class HiggsID_LSTMTask(HiggsID_BaseTask):
             **kwargs: Arbitrary keyword arguments
         """
         super().__init__(**kwargs)
-
-        self._layers_lstm = layers_lstm
-        self._layers_mlp = layers_mlp
-        self._activation_last = activation_last
-        self._batch_norm = batch_norm
+        self._hps = hps
         self._n_jets = n_jets
 
-    def build_model(self):
-        self._model = _HiggsID_LSTMTask(
-            layers_lstm=self._layers_lstm,
-            layers_mlp=self._layers_mlp,
-            activation_last=self._activation_last,
-            batch_norm=self._batch_norm,
-            n_jets=self._n_jets
-        )
 
+    def build_model(self):
+        self._model = _HiggsID_LSTMTask( self._hps, n_jets = self._n_jets )
         #self._model_compile()
 
-
 class _HiggsID_LSTMTask(Module):
-    def __init__(self,
-                 layers_lstm=[4, 32, 32, 32, 1],
-                 layers_mlp=[1, 1],
-                 activation_last='Identity',
-                 batch_norm=False,
-                 n_jets=2,
-                 **kwargs):
-        super(_HiggsID_LSTMTask, self).__init__(**kwargs)
-        self.layers_lstm = layers_lstm
+    def __init__(self, hps, n_jets = 2, **kwargs):
+                
+        super().__init__( **kwargs )
+        self._hps = hps
+        
+        self.n_first_layer = self._hps['layers_lstm'][0][0] # this should be same in all choice 
         self.n_jets = n_jets
-        self.lstm = LSTMBlock(layers=layers_lstm,
-                              batch_norm=batch_norm)
-        self.mlp = MLPBlock(layers=layers_mlp,
-                            activation='Identity',
-                            activation_last=activation_last,
-                            batch_norm=batch_norm)
-
-    def forward(self, x):
-        x = transpose(
-            x.reshape(-1, self.n_jets, self.layers_lstm[0]),
-            1, 0)
-        x = self.lstm(x)[-1]
-        x = self.mlp(x)
+        
+        self._hps_lstm = Hyperparameters()
+        self._hps_lstm.set_alias( alias = {'layers_lstm':'layers', 'activation_lstm':'activation', 'batch_norm_lstm':'batch_norm' } )
+        self._hps_lstm.add_hp_from_dict(self._hps, is_alias = True )
+        
+        self._hps_mlp = Hyperparameters()
+        self._hps_mlp.set_alias( alias = {'layers_mlp':'layers', 'activation_mlp':'activation', 'batch_norm_mlp':'batch_norm', 'activation_last':'activation_last' } )
+        self._hps_mlp.add_hp_from_dict(self._hps, is_alias = True )
+        
+        self._lstm = LSTMBlock_HPS( self._hps_lstm )
+        self._mlp = MLPBlock_HPS( self._hps_mlp )
+        
+        self.hps = Hyperparameters()
+        self.hps.add_hp_from_dict( self._hps )
+    
+    def get_hps_parameters(self):
+        return self.hps.get_hps_parameters()
+    
+    def choice(self):
+        return self._choice
+    
+    def choice(self, choice):
+        self._choice = choice
+        self._lstm.set_active_hps( self._choice )
+        self._mlp.set_active_hps( self._choice )
+        
+    def forward(self, x) : 
+        x = transpose( x.reshape(-1, self.n_jets, self.n_first_layer), 1, 0 )
+        x = self._lstm(x)[-1]
+        x = self._mlp(x)
         return x
+        

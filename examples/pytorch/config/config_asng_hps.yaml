@@ -1,0 +1,201 @@
+seed: &seed 0
+#log_level: 40 # ERROR
+log_level: 20
+
+dataset:
+  name: OnlyDiTauDataset_wo_mass
+  params:
+    # max_events is 50000 + 50000 events
+    max_events: 50000
+    data_path: '/data/saito/dataset/onlyDiTau/'
+
+n_jets: &n_jets 2
+n_intermediate_vars: &n_intermediate_vars 6
+
+sub_task_params:
+  tau4vec:
+    tasks:
+      Tau4vec_MLPTask:
+        params:
+          layers_images: [[768, 16, 16, 16, 4], [526, 258, 128, 64, 32, 16, 16, 4]]
+          layers_calib: [[8, 32, 32, 3], [8, 128, 64, 32, 3]]
+          activation: ['ReLU', 'LeakyReLU']
+          activation_last: ['Softmax', 'Sigmoid']
+          batch_norm: [True, False]
+      Tau4vec_Conv2DTask:
+        params:
+          layers_conv2d:
+            - 
+              - ['conv2d', {'in_channels': 3, 'out_channels': 32, 'kernel_size': 3} ]
+              - ['activation', 'ReLU']
+              - ['conv2d', {'in_channels': 32, 'out_channels': 16, 'kernel_size': 3} ]
+              - ['activation', 'ReLU']
+              - ['maxpooling2d', {'kernel_size' : 2, 'stride' : 2, 'dilation' : 1}]
+              - ['conv2d', {'in_channels': 16, 'out_channels': 16, 'kernel_size': 2} ]
+              - ['activation', 'ReLU']
+              - ['conv2d', {'in_channels': 16, 'out_channels': 8, 'kernel_size': 2} ]
+              - ['activation', 'ReLU']
+            - 
+              - ['conv2d', {'in_channels':  3, 'out_channels': 32, 'kernel_size' : 3, 'stride' : 1, 'padding' : 0} ]
+              - ['batch_norm2d', {'num_features' : 32 }]
+              - ['activation', 'ReLU']
+              - ['maxpooling2d', {'kernel_size' : 2, 'stride' : 2, 'dilation' : 1}]
+              - ['conv2d', {'in_channels': 32, 'out_channels': 64, 'kernel_size' : 3, 'stride' : 1, 'padding' : 0} ]
+              - ['batch_norm2d', {'num_features' : 64 }]
+              - ['activation', 'ReLU']
+              - ['maxpooling2d', {'kernel_size' : 2, 'stride' : 2, 'dilation' : 1}]
+              - ['conv2d', {'in_channels': 64, 'out_channels': 128, 'kernel_size' : 2, 'stride' : 1, 'padding' : 0} ]
+              - ['batch_norm2d', {'num_features' : 128 }]
+              - ['activation', 'ReLU']
+              - ['AdaptiveAvgPool2d', {'output_size' : 1}]
+            - 
+              - ['conv2d', {'in_channels':  3, 'out_channels': 256, 'kernel_size' : 3, 'stride' : 1, 'padding' : 0} ]
+              - ['batch_norm2d', {'num_features' : 256 }]
+              - ['activation', 'ReLU']
+              - ['maxpooling2d', {'kernel_size' : 2, 'stride' : 2, 'dilation' : 1}]
+              - ['conv2d', {'in_channels': 256, 'out_channels': 256, 'kernel_size' : 3, 'stride' : 1, 'padding' : 0} ]
+              - ['batch_norm2d', {'num_features' : 256 }]
+              - ['activation', 'ReLU']
+              - ['maxpooling2d', {'kernel_size' : 2, 'stride' : 2, 'dilation' : 1}]
+              - ['conv2d', {'in_channels': 256, 'out_channels': 128, 'kernel_size' : 2, 'stride' : 1, 'padding' : 0} ]
+              - ['batch_norm2d', {'num_features' : 128 }]
+              - ['activation', 'ReLU']
+              - ['AdaptiveAvgPool2d', {'output_size' : 1}]
+              
+          layers_images: [[128, 16, 16, 16, 4], [128, 64, 64, 32, 32, 16, 16, 4], [128, 256, 256, 256, 16, 4]]
+          layers_calib: [ [8, 64, 64, 64, 3], [8, 256, 256, 128, 3], [8, 16, 32, 64, 128, 256, 128, 64, 3]]
+          activation: ['ReLU', 'LeakyReLU', 'GELU', 'CELU']
+          activation_last: ['Softmax', 'Sigmoid']
+          batch_norm: [True]
+      Tau4vec_SFTask:
+        params:
+          n_input_vars: 8
+          n_output_vars: *n_intermediate_vars
+          n_jets: *n_jets
+    pretrain:
+      epochs: 100
+      patience: 10
+      batch_size: 128
+      optimizer:
+        name: Adam
+        params:
+          lr: 1.0e-3
+      loss_func:
+        name: Tau4vecCalibLoss_torch
+      metrics:
+        name: Calc_R2
+        params:
+          multioutput: variance_weighted
+      activation:
+        name: False
+      data:
+        input_key: inputs
+        target_key: internal_vec
+      verbose: 1
+  higgsId:
+    tasks:
+      HiggsID_MLPTask:
+        params:
+          layers: [[6, 32, 32, 32, 2], [6, 16, 32, 64, 128, 16]]
+          activation: ['ReLU','LeakyReLU']
+          activation_last: ['Softmax', 'Sigmoid']
+          batch_norm: [True, False]
+      HiggsID_LSTMTask:
+        params:
+          layers_lstm: [[3, 32, 32, 32, 2], [3, 16, 32, 64, 128, 16, 2], [3, 256, 256, 256, 2]]
+          layers_mlp: [[2, 1], [2, 4, 16, 32, 1], [2, 256, 256, 256, 1], [2,4,8,16,32,64,32,16,8,4,2,1] ] 
+          activation_lstm: ['ReLU', 'LeakyReLU', 'GELU', 'CELU']
+          activation_mlp: ['ReLU', 'LeakyReLU', 'GELU', 'CELU']
+          activation_last: ['Softmax', 'Sigmoid']
+          batch_norm_lstm: [False]
+          batch_norm_mlp: [True]
+          n_jets: *n_jets
+      HiggsID_MassTask:
+        params:
+          layers: [[1, 64, 64, 2], [1, 32, 64, 128, 64, 32, 16, 2]]
+          activation: ['ReLU', 'LeakyReLU']
+          activation_last: ['Softmax', 'Sigmoid']
+          batch_norm: [True, False]
+          scale_mass: 0.008     # 1./125.
+          n_jets: *n_jets
+          n_input_vars: *n_intermediate_vars
+    pretrain:
+      epochs: 100
+      patience: 10
+      batch_size: 128
+      optimizer:
+        name: Adam
+        params:
+          lr: 1.0e-3
+      loss_func:
+        name: BCEWithLogitsLoss
+      metrics:
+        name: Calc_Auc
+      activation:
+        name: False
+      data:
+        input_key: internal_vec
+        target_key: internal_label
+      verbose: 1
+ASNG:
+  epochs: 100
+  batch_size: {'type':'equal_length', 'length':500, 'test' : 250}
+  patience: 20
+  tau4vec_tasks: ['conv2D']
+  higgsId_tasks: ['lstm']
+  loss_first:
+    name: Tau4vecCalibLoss_torch
+  loss_second:
+    name: BCEWithLogitsLoss
+  optimizer:
+    name: Adam
+    params:
+      lr: 1.0e-3
+  scheduler:
+    name: StepLR
+    params:
+      step_size: 20
+      gamma: 0.2
+  data:
+    input_key: inputs
+    target_key: targets
+  asng_args : 
+    alpha: 1.5
+    lam: 2
+    delta: 0.0
+    clip: 10
+    range_restriction: True 
+    clipping_value: 10.0
+  connectiontask_args:
+    num_epochs: 100
+    max_patience: 20
+    batch_size: 100
+    load_weights: False
+    optimizer: 'Adam'
+    optimizer_args: 
+      lr: 1.0e-3
+    scheduler: MultiStepLR
+    scheduler_args:
+      milestones: [10, 20, 40, 60, 80]
+      gamma: 0.2
+    verbose: 1
+    metrics: ['loss']
+    phases: ['train', 'valid', 'test']
+    variable_mapping: None
+    device: None
+
+re_train:
+  epochs: 100
+  optimizer:
+    name: Adam
+    params:
+      lr: 1.0e-2
+  scheduler:
+    name: MultiStepLR
+    params:
+      milestones: [10, 20, 30, 40, 50, 75, 100]
+      gamma: 0.5                # 1倍のことなので変化されない
+  data:
+    input_key: inputs
+    target_key: targets
+  patience: 10

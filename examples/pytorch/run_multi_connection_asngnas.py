@@ -19,6 +19,7 @@ def main(opts):
     global DEVICE
     from utils import load_config
     from run_utils import get_multi_loss, set_seed
+    print(opts.config)
     config = load_config(opts.config)
     
     verbose = 1
@@ -49,7 +50,8 @@ def main(opts):
         config['ASNG']['delta'] = opts.delta
         
     if opts.epochs is not None : 
-        config['ASNG']['epochs'] = opts.epochs
+        if opts.epochs > 0 : 
+            config['ASNG']['epochs'] = opts.epochs
         
     
     set_seed(config.seed)
@@ -68,15 +70,16 @@ def main(opts):
         save_dir=save_dir,
         config=config,
         device=DEVICE,
-        tau4vec_tasks=['conv2D', 'MLP', 'SF'],
-        higgsId_tasks=['lstm', 'mlp', 'mass'],
+        tau4vec_tasks = config.ASNG.tau4vec_tasks,
+        higgsId_tasks = config.ASNG.higgsId_tasks,
+        # truth_intermediate_inputs = False, # this is ok, this is for only pre-training, once we create connection_task, this will be replaced by output of task1
     )
 
     # Time measurements
     from timer import timer
     timer_reg = {}
 
-    phases = ['test'] if opts.load_weights else ['train', 'valid', 'test']
+    phases = ['test'] if opts.load_weights else ['train', 'valid']
     
     # Agent
     logger.info(f'lambda / alpha / delta is {config.ASNG.lam} / {config.ASNG.alpha} / {config.ASNG.delta}')
@@ -99,7 +102,8 @@ def main(opts):
             asng_args = config.ASNG.asng_args, 
             optimizer = config.ASNG.optimizer.name, 
             optimizer_args = config.ASNG.optimizer.params, 
-            scheduler = config.ASNG.scheduler,
+            scheduler = config.ASNG.scheduler.name,
+            scheduler_args = config.ASNG.scheduler.params,
             # BaseAgent
             saver=saver,
             storegate=storegate,
@@ -132,7 +136,7 @@ def main(opts):
             for k, v in val.items():
                 print_dict( f'{key} {k}', v)
         else : 
-            logger.info(f'{key: <30} : {val}')
+            logger.info(f'{key: <50} : {val}')
     
     for key, val in results.items() : 
         print_dict(key, val)

@@ -1,5 +1,6 @@
 from torch.nn import Module
-from multiml.task.pytorch.modules import MLPBlock
+from multiml.task.pytorch.modules import MLPBlock, MLPBlock_HPS
+from multiml import Hyperparameters
 
 from . import Tau4vec_BaseTask
 
@@ -7,12 +8,7 @@ from . import Tau4vec_BaseTask
 class Tau4vec_MLPTask(Tau4vec_BaseTask):
     ''' Tau4vec MLP task
     '''
-    def __init__(self,
-                 layers_images=None,
-                 layers_calib=None,
-                 activation=None,
-                 batch_norm=False,
-                 **kwargs):
+    def __init__(self, hps = None, **kwargs):
         """
 
         Args:
@@ -23,41 +19,46 @@ class Tau4vec_MLPTask(Tau4vec_BaseTask):
             **kwargs: Arbitrary keyword arguments
         """
         super().__init__(**kwargs)
-
-        self._layers_images = layers_images
-        self._layers_calib = layers_calib
-        self._activation = activation
-        self._batch_norm = batch_norm
+        self._hps = hps
 
     def build_model(self):
-        self._model = _Tau4vec_MLPTask(
-            layers_images=self._layers_images,
-            layers_calib=self._layers_calib,
-            activation=self._activation,
-            batch_norm=self._batch_norm
-        )
-
+        self._model = _Tau4vec_MLPTask( self._hps )
+        
         #self._model_compile()
 
 
 class _Tau4vec_MLPTask(Module):
-    def __init__(self,
-                 layers_images=[768, 32, 32, 32, 4],
-                 layers_calib=[8, 32, 32, 32, 4],
-                 activation='ReLU',
-                 batch_norm=False,
-                 **kwargs):
-        super(_Tau4vec_MLPTask, self).__init__(**kwargs)
-        self._mlp1 = MLPBlock(layers=layers_images,
-                              activation=activation,
-                              activation_last='Identity',
-                              batch_norm=batch_norm)
-        self._mlp2 = MLPBlock(layers=layers_calib,
-                              activation=activation,
-                              activation_last='Identity',
-                              batch_norm=batch_norm)
-        self._layers_calib = layers_calib
-        self._len_output_vers = layers_calib[-1] * 2
+    def __init__(self, hps, **kwargs):
+        super().__init__(**kwargs)
+        self._hps = hps
+        
+        self._hps_mlp1 = Hyperparameters()
+        self._hps_mlp1.set_alias( alias =  {'layers_images':'layers', 'activation' : 'activation', 'activation_last':'activation_last', 'batch_norm':'batch_norm' } )
+        self._hps_mlp1.add_hp_from_dict(self._hps, is_alias = True )
+                
+        self._hps_mlp2 = Hyperparameters()
+        self._hps_mlp2.set_alias( alias =  {'layers_calib':'layers', 'activation' : 'activation', 'activation_last':'activation_last', 'batch_norm':'batch_norm' } )
+        self._hps_mlp2.add_hp_from_dict(self._hps, is_alias = True )
+        
+        self._mlp1 = MLPBlock_HPS( self._hps_mlp1 )
+        self._mlp2 = MLPBlock_HPS( self._hps_mlp2 )
+        
+        self._len_output_vers = self._hps_mlp2['layers']._data[-1]*2
+        
+        self.hps = Hyperparameters()
+        self.hps.add_hp_from_dict( self._hps )
+        
+    def get_hps_parameters(self):
+        return self.hps.get_hps_parameters()
+
+    def choice(self) : 
+        return self._choice
+    
+    def choice(self, choice):
+        self._choice = choice 
+        self._mlp1.set_active_hps( self._choice )
+        self._mlp2.set_active_hps( self._choice )
+
 
     def forward(self, x):
         from torch import cat
@@ -69,13 +70,15 @@ class _Tau4vec_MLPTask(Module):
         input_jet_reshape_3 = input_jet_reshape_4[:, :3]  # mass is not used
 
         x = cat((x_1, input_jet_reshape_4), dim=1)
+        layers_calib_last = self._hps_mlp2['layers'].active_data[-1]
 
         x = self._mlp2(x)
-        if self._layers_calib[-1] == 4:
+        
+        if layers_calib_last == 4 : 
             x = x + input_jet_reshape_4
-        elif self._layers_calib[-1] == 3:
+        elif layers_calib_last == 3 : 
             x = x + input_jet_reshape_3
 
         x = Tau4vec_BaseTask.set_phi_within_valid_range(x)
-        output = x.reshape(-1, self._layers_calib[-1] * 2)
+        output = x.reshape(-1, layers_calib_last * 2 )
         return output

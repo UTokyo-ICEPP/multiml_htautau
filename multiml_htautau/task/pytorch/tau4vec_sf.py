@@ -42,8 +42,9 @@ class _Tau4vec_SFTask(Module):
 class Tau4vec_SFTask(Tau4vec_BaseTask):
     ''' Tau4vec SF task
     '''
-    def __init__(self, n_input_vars=8, n_output_vars=6, n_jets=2, **kwargs):
+    def __init__(self, hps = None, n_input_vars=8, n_output_vars=6, n_jets=2, **kwargs):
         super(Tau4vec_SFTask, self).__init__(**kwargs)
+        self._hps = hps
         self._n_input_vars = n_input_vars
         self._n_output_vars = n_output_vars
         self._n_jets = n_jets

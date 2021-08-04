@@ -1,5 +1,6 @@
 from torch.nn import Module
-from multiml.task.pytorch.modules import MLPBlock
+from multiml.task.pytorch.modules import MLPBlock, MLPBlock_HPS
+from multiml import Hyperparameters
 
 from . import HiggsID_BaseTask
 
@@ -8,9 +9,7 @@ class HiggsID_MassTask(HiggsID_BaseTask):
     ''' HiggsID Mass task
     '''
     def __init__(self,
-                 layers=None,
-                 activation=None,
-                 batch_norm=False,
+                 hps = None, 
                  scale_mass=1.,
                  n_jets=2,
                  n_input_vars=6,
@@ -25,52 +24,56 @@ class HiggsID_MassTask(HiggsID_BaseTask):
             **kwargs: Arbitrary keyword arguments
         """
         super().__init__(**kwargs)
-
-        self._layers = layers
-        self._activation = activation
-        self._batch_norm = batch_norm
+        self._hps = hps
         self._scale_mass = scale_mass
         self._n_jets = n_jets
         self._n_input_vars = n_input_vars
 
-    def build_model(self):
-        self._model = _HiggsID_MassTask(
-            layers=self._layers,
-            activation=self._activation,
-            activation_last=self._activation_last,
-            batch_norm=self._batch_norm,
-            scale_mass=self._scale_mass,
-            n_jets=self._n_jets,
-            n_input_vars=self._n_input_vars
-        )
 
+    def build_model(self):
+        self._model = _HiggsID_MassTask(self._hps, 
+                scale_mass=self._scale_mass,
+                n_jets=self._n_jets,
+                n_input_vars=self._n_input_vars
+            )
+            
         #self._model_compile()
 
 
 class _HiggsID_MassTask(Module):
     def __init__(self,
-                 layers=[1, 64, 64, 1],
-                 activation='ReLU',
-                 activation_last='Identity',
-                 batch_norm=False,
+                 hps, 
                  scale_mass=1./125.,
                  n_jets=2,
                  n_input_vars=6,
                  **kwargs):
-        super(_HiggsID_MassTask, self).__init__(**kwargs)
+        super().__init__(**kwargs)
+        self._hps = hps
         self.scale_mass = scale_mass
         self.n_input_vars = n_input_vars
         self.n_jets = n_jets
+        
+        self._mlp_hps = Hyperparameters()
+        self._mlp_hps.add_hp_from_dict( self._hps )
+        self._mlp = MLPBlock_HPS(self._mlp_hps)
+        
+        self.hps = Hyperparameters()
+        self.hps.add_hp_from_dict( self._hps )
 
-        self.mlp = MLPBlock(layers=layers,
-                            activation=activation,
-                            activation_last=activation_last,
-                            batch_norm=batch_norm)
+    def get_hps_parameters(self):
+        return self.hps.get_hps_parameters()
+        
+    def choice(self):
+        return self._choice 
+        
+    def choice(self, choice):
+        self._choice = choice
+        self._mlp.set_active_hps( self._choice )
 
     def forward(self, x):
         x = self.mass_layer(x, self.n_jets, self.n_input_vars)
         x = x * self.scale_mass
-        x = self.mlp(x)
+        x = self._mlp(x)
         return x
 
     @staticmethod
