@@ -25,8 +25,7 @@ corr_tau_4vec = (
     '2ndCorrTauJetPhi',
 )
 
-mapping_truth_corr = [(v1, v2)
-                      for v1, v2 in zip(truth_tau_4vec, corr_tau_4vec)]
+mapping_truth_corr = [(v1, v2) for v1, v2 in zip(truth_tau_4vec, corr_tau_4vec)]
 
 
 def get_higgsId_subtasks(saver,
@@ -41,7 +40,7 @@ def get_higgsId_subtasks(saver,
 
     higgsId_args = {
         'saver': saver,
-        'output_var_names': ('probability',),
+        'output_var_names': ('probability', ),
         'true_var_names': 'label',
         'optimizer_args': dict(learning_rate=1e-3),
         'optimizer': 'adam',
@@ -86,25 +85,23 @@ def get_higgsId_subtasks(saver,
         elif subtask_name == 'lstm':
             from multiml_htautau.task.keras import HiggsID_LSTMTask
             subtask['subtask_id'] = 'higgsId-lstm'
-            subtask['env'] = HiggsID_LSTMTask(
-                name='higgsId-lstm',
-                input_njets=2,
-                activation_last=activation_last,
-                batch_norm=batch_norm,
-                **higgsId_args)
+            subtask['env'] = HiggsID_LSTMTask(name='higgsId-lstm',
+                                              input_njets=2,
+                                              activation_last=activation_last,
+                                              batch_norm=batch_norm,
+                                              **higgsId_args)
             subtask['hps'] = Hyperparameters({'nodes': [[32, 32, 32, 1]]})
 
         elif subtask_name == 'mass':
             from multiml_htautau.task.keras import HiggsID_MassTask
             subtask['subtask_id'] = 'higgsId-mass'
-            subtask['env'] = HiggsID_MassTask(
-                name='higgsId-mass',
-                input_njets=2,
-                activation='relu',
-                activation_last=activation_last,
-                batch_norm=batch_norm,
-                scale_mass=1. / 125.,
-                **higgsId_args)
+            subtask['env'] = HiggsID_MassTask(name='higgsId-mass',
+                                              input_njets=2,
+                                              activation='relu',
+                                              activation_last=activation_last,
+                                              batch_norm=batch_norm,
+                                              scale_mass=1. / 125.,
+                                              **higgsId_args)
             subtask['hps'] = Hyperparameters({'layers': [[64, 64, 1]]})
 
         elif subtask_name == 'zero':
@@ -162,14 +159,14 @@ def get_tau4vec_subtasks(saver,
         if subtask_name == 'MLP':
             from multiml_htautau.task.keras import Tau4vec_MLPTask
             subtask['subtask_id'] = 'tau4vec-MLP'
-            subtask['env'] = Tau4vec_MLPTask(
-                name='tau4vec-MLP',
-                batch_norm=batch_norm,
-                activation='relu',
-                **tau4vec_args)
-            subtask['hps'] = Hyperparameters({'layers_images': [[16, 16, 16, 4]],
-                                              'layers_calib': [[32, 32, 3]],
-                                             })
+            subtask['env'] = Tau4vec_MLPTask(name='tau4vec-MLP',
+                                             batch_norm=batch_norm,
+                                             activation='relu',
+                                             **tau4vec_args)
+            subtask['hps'] = Hyperparameters({
+                'layers_images': [[16, 16, 16, 4]],
+                'layers_calib': [[32, 32, 3]],
+            })
 
         elif subtask_name == 'conv2D':
             from multiml_htautau.task.keras import Tau4vec_Conv2DTask
@@ -195,21 +192,20 @@ def get_tau4vec_subtasks(saver,
                     'kernel_size': (2, 2)
                 }),
             ]
-            subtask['env'] = Tau4vec_Conv2DTask(
-                name='tau4vec-conv2D',
-                batch_norm=batch_norm,
-                activation='relu',
-                **tau4vec_args)
-            subtask['hps'] = Hyperparameters({'layers_conv2d': [layers_conv2d],
-                                              'layers_images': [[16, 16, 16, 4]],
-                                              'layers_calib': [[64, 64, 64, 3]],
-                                             })
+            subtask['env'] = Tau4vec_Conv2DTask(name='tau4vec-conv2D',
+                                                batch_norm=batch_norm,
+                                                activation='relu',
+                                                **tau4vec_args)
+            subtask['hps'] = Hyperparameters({
+                'layers_conv2d': [layers_conv2d],
+                'layers_images': [[16, 16, 16, 4]],
+                'layers_calib': [[64, 64, 64, 3]],
+            })
 
         elif subtask_name == 'SF':
             from multiml_htautau.task.keras import Tau4vec_SFTask
             subtask['subtask_id'] = 'tau4vec-SF'
-            subtask['env'] = Tau4vec_SFTask(name='tau4vec-SF',
-                                            **tau4vec_args)
+            subtask['env'] = Tau4vec_SFTask(name='tau4vec-SF', **tau4vec_args)
             subtask['hps'] = None
 
         elif subtask_name == 'zero':

@@ -34,14 +34,12 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
-
 FIRST_MODEL_NAME = ['MLP', 'CONV2D', 'SF']
 SECOND_MODEL_NAME = ['MLP', 'LSTM', 'MASS']
 MODELNAME_CHOICE_INDEX = {
-    f'{n1}_{n2}': v for (n1, n2), v in zip(
-        product(FIRST_MODEL_NAME, SECOND_MODEL_NAME),
-        product(range(len(FIRST_MODEL_NAME)), range(len(SECOND_MODEL_NAME)))
-    )
+    f'{n1}_{n2}': v
+    for (n1, n2), v in zip(product(FIRST_MODEL_NAME, SECOND_MODEL_NAME),
+                           product(range(len(FIRST_MODEL_NAME)), range(len(SECOND_MODEL_NAME))))
 }
 
 
@@ -54,25 +52,17 @@ def evaluate(model, conf, dataloader, metrics, result, is_gp_3dim):
         model.eval()
         dataloader.dataset.test()
         test_dataset = dataloader.dataset
-        test_dataloader = DataLoader(test_dataset,
-                                     batch_size=100,
-                                     shuffle=False)
+        test_dataloader = DataLoader(test_dataset, batch_size=100, shuffle=False)
         A = range(len(FIRST_MODEL_NAME))
         B = range(len(SECOND_MODEL_NAME))
         count = 0
         num_name_conb = {
-            num: f'{f}_{s}' for num, (f, s) in enumerate(
-                product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                )
-            )
+            num: f'{f}_{s}'
+            for num, (f, s) in enumerate(product(FIRST_MODEL_NAME, SECOND_MODEL_NAME))
         }
         num_name_1st = {
-            num: f for num, (f, s) in enumerate(
-                product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                )
-            )
+            num: f
+            for num, (f, s) in enumerate(product(FIRST_MODEL_NAME, SECOND_MODEL_NAME))
         }
         for choice in product(A, B):
             outputs_data = []
@@ -98,10 +88,8 @@ def evaluate(model, conf, dataloader, metrics, result, is_gp_3dim):
 
             c_1 = set_module([torch.nn, MyLoss], conf.SPOS_NAS, 'loss_first')
             c_2 = set_module([torch.nn, MyLoss], conf.SPOS_NAS, 'loss_second')
-            loss_1st = c_1(torch.tensor(temp_outputs_data),
-                           torch.tensor(temp_targets_data))
-            loss_2nd = c_2(torch.tensor(outputs_data),
-                           torch.tensor(targets_data))
+            loss_1st = c_1(torch.tensor(temp_outputs_data), torch.tensor(temp_targets_data))
+            loss_2nd = c_2(torch.tensor(outputs_data), torch.tensor(targets_data))
 
             if is_gp_check:
                 from models.sub_task import set_phi_within_valid_range
@@ -109,62 +97,46 @@ def evaluate(model, conf, dataloader, metrics, result, is_gp_3dim):
                 def reshape3vec(data):
                     return data.reshape(-1, 3)
 
-                temp_outputs_data = set_phi_within_valid_range(
-                    reshape3vec(temp_outputs_data)
-                )
-                upper = set_phi_within_valid_range(
-                    reshape3vec(upper)
-                )
-                lower = set_phi_within_valid_range(
-                    reshape3vec(lower)
-                )
+                temp_outputs_data = set_phi_within_valid_range(reshape3vec(temp_outputs_data))
+                upper = set_phi_within_valid_range(reshape3vec(upper))
+                lower = set_phi_within_valid_range(reshape3vec(lower))
                 if not is_gp_3dim:
                     temp_outputs_data = temp_outputs_data.reshape(-1, 6)
                     upper = upper.reshape(-1, 6)
                     lower = lower.reshape(-1, 6)
 
-                query = (
-                    ((lower < upper)
-                     & (temp_outputs_data < upper)
-                     & (lower < temp_outputs_data))
-                    | ((upper < lower)
-                       & (upper < temp_outputs_data)
-                       & (lower < temp_outputs_data))
-                    | ((upper < lower)
-                       & (temp_outputs_data < upper)
-                       & (temp_outputs_data < lower))
-                )
-                ratio = np.sum(
-                    np.where(query, True, False).all(axis=1)
-                )/(len(temp_outputs_data))
+                query = (((lower < upper)
+                          & (temp_outputs_data < upper)
+                          & (lower < temp_outputs_data))
+                         | ((upper < lower)
+                            & (upper < temp_outputs_data)
+                            & (lower < temp_outputs_data))
+                         | ((upper < lower)
+                            & (temp_outputs_data < upper)
+                            & (temp_outputs_data < lower)))
+                ratio = np.sum(np.where(query, True, False).all(axis=1)) / (len(temp_outputs_data))
                 result['RATIO'][num_name_1st[count]] = [ratio]
 
-                query = (
-                    ((lower[:, 0] < upper[:, 0])
-                     & (temp_outputs_data[:, 0] < upper[:, 0])
-                     & (lower[:, 0] < temp_outputs_data[:, 0]))
-                    | ((upper[:, 0] < lower[:, 0])
-                       & (upper[:, 0] < temp_outputs_data[:, 0])
-                       & (lower[:, 0] < temp_outputs_data[:, 0]))
-                    | ((upper[:, 0] < lower[:, 0])
-                       & (temp_outputs_data[:, 0] < upper[:, 0])
-                       & (temp_outputs_data[:, 0] < lower[:, 0]))
-                )
+                query = (((lower[:, 0] < upper[:, 0])
+                          & (temp_outputs_data[:, 0] < upper[:, 0])
+                          & (lower[:, 0] < temp_outputs_data[:, 0]))
+                         | ((upper[:, 0] < lower[:, 0])
+                            & (upper[:, 0] < temp_outputs_data[:, 0])
+                            & (lower[:, 0] < temp_outputs_data[:, 0]))
+                         | ((upper[:, 0] < lower[:, 0])
+                            & (temp_outputs_data[:, 0] < upper[:, 0])
+                            & (temp_outputs_data[:, 0] < lower[:, 0])))
                 if not is_gp_3dim:
-                    query = (
-                        ((lower[:, [0, 3]] < upper[:, [0, 3]])
-                         & (temp_outputs_data[:, [0, 3]] < upper[:, [0, 3]])
-                         & (lower[:, [0, 3]] < temp_outputs_data[:, [0, 3]]))
-                        | ((upper[:, [0, 3]] < lower[:, [0, 3]])
-                           & (upper[:, [0, 3]] < temp_outputs_data[:, [0, 3]])
-                           & (lower[:, [0, 3]] < temp_outputs_data[:, [0, 3]]))
-                        | ((upper[:, [0, 3]] < lower[:, [0, 3]])
-                           & (temp_outputs_data[:, [0, 3]] < upper[:, [0, 3]])
-                           & (temp_outputs_data[:, [0, 3]] < lower[:, [0, 3]]))
-                    )
-                only_pt_ratio = np.sum(
-                    np.where(query, True, False)
-                )/(len(temp_outputs_data))
+                    query = (((lower[:, [0, 3]] < upper[:, [0, 3]])
+                              & (temp_outputs_data[:, [0, 3]] < upper[:, [0, 3]])
+                              & (lower[:, [0, 3]] < temp_outputs_data[:, [0, 3]]))
+                             | ((upper[:, [0, 3]] < lower[:, [0, 3]])
+                                & (upper[:, [0, 3]] < temp_outputs_data[:, [0, 3]])
+                                & (lower[:, [0, 3]] < temp_outputs_data[:, [0, 3]]))
+                             | ((upper[:, [0, 3]] < lower[:, [0, 3]])
+                                & (temp_outputs_data[:, [0, 3]] < upper[:, [0, 3]])
+                                & (temp_outputs_data[:, [0, 3]] < lower[:, [0, 3]])))
+                only_pt_ratio = np.sum(np.where(query, True, False)) / (len(temp_outputs_data))
                 result['ONLY_PT_RATIO'][num_name_1st[count]] = [only_pt_ratio]
             else:
                 ratio = -1.0
@@ -176,8 +148,7 @@ def evaluate(model, conf, dataloader, metrics, result, is_gp_3dim):
 
             result['LOSS_2ND'][num_name_conb[count]].append(loss_2nd.item())
             logger.info(f'[Choice:{choice} / auc:{auc_score:.6f}] / ' +
-                        f'first_loss: {loss_1st:.6f} / ' +
-                        f'ratio: {ratio:.6f} / ' +
+                        f'first_loss: {loss_1st:.6f} / ' + f'ratio: {ratio:.6f} / ' +
                         f'only_pt_ratio: {only_pt_ratio:.6f}')
             count += 1
 
@@ -195,17 +166,8 @@ def evaluate(model, conf, dataloader, metrics, result, is_gp_3dim):
 @click.option('--n_times_model', '-nt', type=int, default=1)
 @click.option('--prefix', '-p', type=str, default='')
 @click.option('--is_gp_3dim', '-idp', type=bool, default=False)
-def main(
-        conf: str,
-        seed: int,
-        gpu_index: int,
-        data_path: str,
-        event: int,
-        weight: float,
-        n_times_model: int,
-        prefix: str,
-        is_gp_3dim: bool
-):
+def main(conf: str, seed: int, gpu_index: int, data_path: str, event: int, weight: float,
+         n_times_model: int, prefix: str, is_gp_3dim: bool):
     global DEVICE, FIRST_MODEL_NAME, SECOND_MODEL_NAME, MODELNAME_CHOICE_INDEX
     start = time.time()
     conf = load_config(conf)
@@ -228,10 +190,7 @@ def main(
     model_confs_tau4vec['tasks'] = model_confs_tau4vec['tasks'] * n_times_model
     model_confs_higgsId = conf.sub_task_params.higgsId
     model_confs_higgsId['tasks'] = model_confs_higgsId['tasks'] * n_times_model
-    sub_models_conf = {
-        'tau4vec': model_confs_tau4vec,
-        'higgsId': model_confs_higgsId
-    }
+    sub_models_conf = {'tau4vec': model_confs_tau4vec, 'higgsId': model_confs_higgsId}
     FIRST_MODEL_NAME = [
         i['name'].split('_')[-1][:-4] + f'-{num}'
         for num, i in enumerate(model_confs_tau4vec['tasks'])
@@ -242,12 +201,9 @@ def main(
     ]
     MODELNAME_CHOICE_INDEX = {
         f'{n1}_{n2}': v
-        for (n1, n2), v in zip(
-                product(FIRST_MODEL_NAME,
-                        SECOND_MODEL_NAME),
-                product(range(len(FIRST_MODEL_NAME)),
-                        range(len(SECOND_MODEL_NAME)))
-        )
+        for (n1,
+             n2), v in zip(product(FIRST_MODEL_NAME, SECOND_MODEL_NAME),
+                           product(range(len(FIRST_MODEL_NAME)), range(len(SECOND_MODEL_NAME))))
     }
 
     set_seed(conf.seed)
@@ -262,9 +218,7 @@ def main(
     set_seed(conf.seed)
     dataset = set_module([MyDataset], conf, 'dataset')
     set_seed(conf.seed)
-    dataloader = DataLoader(dataset,
-                            batch_size=100,
-                            shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=100, shuffle=True)
     logger.info('set dataloader')
     # #########################################################################
     # pre-train ###############################################################
@@ -274,10 +228,7 @@ def main(
     for i, sub_model in enumerate(tau4vec):
         logger.info(f'pretrain: [0][{i}]')
         set_seed(conf.seed)
-        optimizer = set_module([optim],
-                               pretrain_conf,
-                               'optimizer',
-                               params=sub_model.parameters())
+        optimizer = set_module([optim], pretrain_conf, 'optimizer', params=sub_model.parameters())
         loss_func = set_module([nn, MyLoss], pretrain_conf, 'loss_func')
         metrics = set_module([MyMetrics], pretrain_conf, 'metrics')
         activation = set_module([nn], pretrain_conf, 'activation')
@@ -301,10 +252,7 @@ def main(
     for i, sub_model in enumerate(higgsId):
         logger.info(f'pretrain: [1][{i}]')
         set_seed(conf.seed)
-        optimizer = set_module([optim],
-                               pretrain_conf,
-                               'optimizer',
-                               params=sub_model.parameters())
+        optimizer = set_module([optim], pretrain_conf, 'optimizer', params=sub_model.parameters())
         loss_func = set_module([nn, MyLoss], pretrain_conf, 'loss_func')
         metrics = set_module([MyMetrics], pretrain_conf, 'metrics')
         activation = set_module([nn], pretrain_conf, 'activation')
@@ -334,8 +282,7 @@ def main(
     for num_task, sub in enumerate(task):
         for num_model in range(len(sub)):
             pre_trained_model[num_task][num_model].load_state_dict(
-                deepcopy(task[num_task][num_model].state_dict())
-            )
+                deepcopy(task[num_task][num_model].state_dict()))
     # #########################################################################
     # #########################################################################
 
@@ -345,35 +292,27 @@ def main(
     def make_output_dict():
         return {
             'X': [],
-            'AUC': {
-                f'{f}_{s}': [] for f, s in product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                )
-            },
-            'LOSS_1ST': {
-                f: [] for f in FIRST_MODEL_NAME
-            },
-            'LOSS_2ND': {
-                f'{f}_{s}': [] for f, s in product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                )
-            },
-            'RATIO': {
-                f: [] for f in FIRST_MODEL_NAME
-            },
-            'ONLY_PT_RATIO': {
-                f: [] for f in FIRST_MODEL_NAME
-            },
+            'AUC': {f'{f}_{s}': []
+                    for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
+            'LOSS_1ST': {f: []
+                         for f in FIRST_MODEL_NAME},
+            'LOSS_2ND': {f'{f}_{s}': []
+                         for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
+            'RATIO': {f: []
+                      for f in FIRST_MODEL_NAME},
+            'ONLY_PT_RATIO': {f: []
+                              for f in FIRST_MODEL_NAME},
         }
 
     # SPOS-NAS
-    loss_func = [set_module([nn, MyLoss], sposnas_conf, 'loss_first'),
-                 set_module([nn, MyLoss], sposnas_conf, 'loss_second')]
+    loss_func = [
+        set_module([nn, MyLoss], sposnas_conf, 'loss_first'),
+        set_module([nn, MyLoss], sposnas_conf, 'loss_second')
+    ]
     loss_weight = [weight, 1. - weight]
     metrics = get_module([MyMetrics], 'Calc_Auc')()
 
-    model = SPOS(task=task, loss_func=loss_func,
-                 loss_weight=loss_weight)
+    model = SPOS(task=task, loss_func=loss_func, loss_weight=loss_weight)
     model.to(DEVICE)
 
     output_dict = make_output_dict()
@@ -384,19 +323,12 @@ def main(
     for num_task, sub in enumerate(task):
         for num_model in range(len(sub)):
             task[num_task][num_model].load_state_dict(
-                deepcopy(pre_trained_model[num_task][num_model].state_dict())
-            )
+                deepcopy(pre_trained_model[num_task][num_model].state_dict()))
     logger.info('load pretrain models done')
     logger.info('set model parameters...')
 
-    optimizer = set_module([optim],
-                           sposnas_conf,
-                           'optimizer',
-                           params=model.parameters())
-    scheduler = set_module([optim.lr_scheduler],
-                           sposnas_conf,
-                           'scheduler',
-                           optimizer=optimizer)
+    optimizer = set_module([optim], sposnas_conf, 'optimizer', params=model.parameters())
+    scheduler = set_module([optim.lr_scheduler], sposnas_conf, 'scheduler', optimizer=optimizer)
     logger.info('set model parameters done')
     logger.info('fit model...')
     model.fit(epochs=sposnas_conf.epochs,
@@ -412,11 +344,9 @@ def main(
 
     set_seed(conf.seed)
     logger.info('re-train start')
-    selected_model, _ = max(
-        {
-            k: v[-1] for k, v in output_dict['AUC'].items()
-        }.items(), key=lambda x: x[1]
-    )
+    selected_model, _ = max({k: v[-1]
+                             for k, v in output_dict['AUC'].items()}.items(),
+                            key=lambda x: x[1])
     logger.info(f'selected_model: {selected_model}')
     selected_choice = MODELNAME_CHOICE_INDEX[selected_model]
     model.fit(epochs=sposnas_conf.epochs,
@@ -431,42 +361,39 @@ def main(
     elapsed_time = time.time() - start
     events = conf.dataset.params.max_events * 2
     if prefix:
-        output_file = (f'result.SPOS_NAS-{prefix}_' +
-                       f's{seed}_w{weight}_e{events}_' +
+        output_file = (f'result.SPOS_NAS-{prefix}_' + f's{seed}_w{weight}_e{events}_' +
                        f'n{n_times_model*3}.json')
     else:
         output_file = (f'result.SPOS_NAS-s{seed}_w{weight}_e{events}_' +
                        f'n{n_times_model*3}.json')
 
     with open(os.path.join('logs', output_file), 'w') as fo:
-        json.dump(
-            [{
-                'agent': 'SPOS-NAS',
-                'tasks': {
-                    'tau4vec': {
-                        'weight': weight,
-                        'loss_test': -1,
-                        'mse_test': -1,
-                        'ratio_2sigma_GP_test': -1,
-                        'models': FIRST_MODEL_NAME,
-                        'model_selected': selected_model.split('_')[0]
-                    },
-                    'higgsId': {
-                        'weight': 1. - weight,
-                        'loss_test': -1,
-                        'auc_test': -1,
-                        'models': SECOND_MODEL_NAME,
-                        'model_selected': selected_model.split('_')[1]
-                    }
+        json.dump([{
+            'agent': 'SPOS-NAS',
+            'tasks': {
+                'tau4vec': {
+                    'weight': weight,
+                    'loss_test': -1,
+                    'mse_test': -1,
+                    'ratio_2sigma_GP_test': -1,
+                    'models': FIRST_MODEL_NAME,
+                    'model_selected': selected_model.split('_')[0]
                 },
-                'loss_test': -1,
-                'nevents': conf.dataset.params.max_events * 2,
-                'seed': conf.seed,
-                'walltime': elapsed_time
-            }],
-            fo,
-            indent=2
-        )
+                'higgsId': {
+                    'weight': 1. - weight,
+                    'loss_test': -1,
+                    'auc_test': -1,
+                    'models': SECOND_MODEL_NAME,
+                    'model_selected': selected_model.split('_')[1]
+                }
+            },
+            'loss_test': -1,
+            'nevents': conf.dataset.params.max_events * 2,
+            'seed': conf.seed,
+            'walltime': elapsed_time
+        }],
+                  fo,
+                  indent=2)
 
     dummy = make_output_dict()
     dummy = evaluate(model, conf, dataloader, metrics, dummy, is_gp_3dim)
@@ -476,20 +403,17 @@ def main(
         LOSS_1ST = res['LOSS_1ST'][selected_model.split('_')[0]][0]
         LOSS_2ND = res['LOSS_2ND'][selected_model][0]
         RATIO = res['RATIO'][selected_model.split('_')[0]][0]
-        ONLY_PT_RATIO = res[
-            'ONLY_PT_RATIO'
-        ][selected_model.split('_')[0]][0]
-        target_result = dict(
-            seed=seed,
-            AUC=AUC,
-            LOSS_1ST=LOSS_1ST,
-            LOSS_2ND=LOSS_2ND,
-            RATIO=RATIO,
-            ONLY_PT_RATIO=ONLY_PT_RATIO
-        )
+        ONLY_PT_RATIO = res['ONLY_PT_RATIO'][selected_model.split('_')[0]][0]
+        target_result = dict(seed=seed,
+                             AUC=AUC,
+                             LOSS_1ST=LOSS_1ST,
+                             LOSS_2ND=LOSS_2ND,
+                             RATIO=RATIO,
+                             ONLY_PT_RATIO=ONLY_PT_RATIO)
         logger.info(f're-train results: {target_result}')
         return {
-            'agent': 'SPOS-NAS',
+            'agent':
+            'SPOS-NAS',
             'tasks': {
                 'tau4vec': {
                     'weight': weight,
@@ -507,19 +431,18 @@ def main(
                     'model_selected': selected_model.split('_')[1]
                 }
             },
-            'loss_test': (weight * target_result['LOSS_1ST']
-                          + (1. - weight) * target_result['LOSS_2ND']),
-            'nevents': conf.dataset.params.max_events * 2,
-            'seed': seed,
-            'walltime': time
+            'loss_test':
+            (weight * target_result['LOSS_1ST'] + (1. - weight) * target_result['LOSS_2ND']),
+            'nevents':
+            conf.dataset.params.max_events * 2,
+            'seed':
+            seed,
+            'walltime':
+            time
         }
 
     with open(os.path.join('logs', output_file), 'w') as fo:
-        json.dump(
-            [result_parser(dummy, selected_model, conf.seed, elapsed_time)],
-            fo,
-            indent=2
-        )
+        json.dump([result_parser(dummy, selected_model, conf.seed, elapsed_time)], fo, indent=2)
 
     logger.info('all train and eval step are done')
 

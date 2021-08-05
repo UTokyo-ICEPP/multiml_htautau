@@ -3,10 +3,7 @@ from . import Tau4vec_BaseTask
 
 
 class SF_layer(Layer):
-    def __init__(self,
-                 sf_initializer='ones',
-                 bias_initializer='zeros',
-                 **kwargs):
+    def __init__(self, sf_initializer='ones', bias_initializer='zeros', **kwargs):
         self.sf_initializer = sf_initializer
         self.bias_initializer = bias_initializer
         super(SF_layer, self).__init__(**kwargs)
@@ -27,10 +24,7 @@ class SF_layer(Layer):
         return inputs * self.sf + self.bias
 
     def get_config(self):
-        return {
-            'sf_initializer': self.sf_initializer,
-            'bias_initializer': self.bias_initializer
-        }
+        return {'sf_initializer': self.sf_initializer, 'bias_initializer': self.bias_initializer}
 
 
 class Tau4vec_SFTask(Tau4vec_BaseTask):

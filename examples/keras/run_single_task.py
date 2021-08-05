@@ -3,41 +3,44 @@ import os
 save_dir = f'output/{os.path.basename(__file__)[:-3]}'
 
 from run_utils import common_parser
+
 parser = common_parser()
-parser.add_argument("--model",
-                    dest="model",
-                    help="model",
-                    type=str,
-                    default='MLP')
+parser.add_argument("--model", dest="model", help="model", type=str, default='MLP')
 args = parser.parse_args()
 
 from multiml import logger
+
 logger.set_level(args.log_level)
 
 from setup_tensorflow import setup_tensorflow
+
 setup_tensorflow(args.seed, args.igpu)
 
 from run_utils import add_suffix
+
 save_dir = add_suffix(save_dir, args)
 save_dir += f'_{args.model}'
 
 from multiml.saver import Saver
+
 saver = Saver(save_dir, serial_id=args.seed)
 saver.add("seed", args.seed)
 
 # Storegate
 from my_storegate import get_storegate
+
 storegate = get_storegate(
     data_path=args.data_path,
     max_events=args.max_events,
 )
 
 from multiml.task_scheduler import TaskScheduler
+
 task_scheduler = TaskScheduler()
 
 subtask_args = {
     'saver': saver,
-    'output_var_names': ('probability',),
+    'output_var_names': ('probability', ),
     'true_var_names': 'label',
     'optimizer_args': dict(learning_rate=1e-3),
     'optimizer': 'adam',
@@ -54,6 +57,7 @@ if args.load_weights:
     subtask_args['phases'] = ['test']
 
 from my_tasks import reco_tau_4vec
+
 subtask_args['input_var_names'] = reco_tau_4vec
 
 use_logits = True
@@ -68,6 +72,7 @@ else:
     activation_last = 'sigmoid'
 
 from multiml.hyperparameter import Hyperparameters
+
 subtasks = []
 if args.model == 'MLP':
     from multiml.task.keras import MLPTask
@@ -131,10 +136,12 @@ task_scheduler.add_task(task_id='singleTask', subtasks=subtasks)
 
 # Metric
 from multiml.agent.metric import AUCMetric
+
 metric = AUCMetric(pred_var_name='probability', true_var_name='label', phase='test')
 
 # Time measurements
 from timer import timer
+
 timer_reg = {}
 
 # Agent
@@ -175,4 +182,5 @@ result_metric = metric.calculate()
 logger.info(f'metric = {result_metric}')
 
 from run_utils import postprocessing
+
 postprocessing(saver, storegate, args, do_probability=True, do_tau4vec=False)

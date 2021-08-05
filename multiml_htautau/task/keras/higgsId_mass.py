@@ -4,12 +4,7 @@ from . import HiggsID_BaseTask
 class HiggsID_MassTask(HiggsID_BaseTask):
     ''' HiggsID MLP task
     '''
-    def __init__(self,
-                 layers=None,
-                 activation=None,
-                 batch_norm=False,
-                 scale_mass=1.,
-                 **kwargs):
+    def __init__(self, layers=None, activation=None, batch_norm=False, scale_mass=1., **kwargs):
         """
 
         Args:

@@ -3,21 +3,23 @@ import os
 save_dir = f'output/{os.path.basename(__file__)[:-3]}'
 
 from run_utils import common_parser
+
 parser = common_parser()
-parser.add_argument("--no_model_selection",
-                    action="store_true",
-                    help="Not select one model")
+parser.add_argument("--no_model_selection", action="store_true", help="Not select one model")
 args = parser.parse_args()
 
 from run_utils import add_suffix
+
 save_dir = add_suffix(save_dir, args)
 if args.no_model_selection:
     save_dir += '_ensemble'
 
 from run_utils import get_config_multi_loss
+
 use_multi_loss, loss_weights = get_config_multi_loss(args)
 
 from run_utils import preprocessing
+
 saver, storegate, task_scheduler, metric = preprocessing(
     save_dir=save_dir,
     args=args,
@@ -27,6 +29,7 @@ saver, storegate, task_scheduler, metric = preprocessing(
 
 # Time measurements
 from timer import timer
+
 timer_reg = {}
 
 # Agent
@@ -98,4 +101,5 @@ if not args.load_weights:
         pickle.dump(timer_reg, f)
 
 from run_utils import postprocessing
+
 postprocessing(saver, storegate, args, do_probability=True, do_tau4vec=True)

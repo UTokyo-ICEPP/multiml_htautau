@@ -23,9 +23,7 @@ class PeriodicConditionMSELoss(object):
         self._bound = [[ma, mi] if ma > mi else [mi, ma] for (ma, mi) in bound]
 
     @staticmethod
-    def _periodicse(x_1: torch.Tensor,
-                    x_2: torch.Tensor,
-                    x_max: float,
+    def _periodicse(x_1: torch.Tensor, x_2: torch.Tensor, x_max: float,
                     x_min: float) -> torch.Tensor:
         period = x_max - x_min
         d = torch.abs(x_2 - x_1)
@@ -33,13 +31,10 @@ class PeriodicConditionMSELoss(object):
         return torch.min(test, axis=1).values.pow(2)
 
     @staticmethod
-    def _se(x_1: torch.Tensor,
-            x_2: torch.Tensor) -> torch.Tensor:
+    def _se(x_1: torch.Tensor, x_2: torch.Tensor) -> torch.Tensor:
         return (x_2 - x_1)**2
 
-    def __call__(self,
-                 output: torch.Tensor,
-                 target: torch.Tensor) -> torch.Tensor:
+    def __call__(self, output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
         Args:
             output (torch.Tensor): output of model
@@ -50,11 +45,8 @@ class PeriodicConditionMSELoss(object):
         for i in range(output.shape[1]):
             if i in self._dim:
                 return_val.append(
-                    self._periodicse(output[:, i],
-                                     target[:, i],
-                                     self._bound[count][0],
-                                     self._bound[count][1])
-                )
+                    self._periodicse(output[:, i], target[:, i], self._bound[count][0],
+                                     self._bound[count][1]))
                 count += 1
             else:
                 return_val.append(self._se(output[:, i], target[:, i]))

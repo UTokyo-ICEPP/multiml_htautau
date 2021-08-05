@@ -40,8 +40,10 @@ def get_module(groups: list, name: Union[str, bool]):
                 return getattr(group, name)
         raise RuntimeError("Module not found:", name)
     else:
+
         def return_none(**args):
             return None
+
         return return_none
 
 
@@ -60,9 +62,7 @@ def set_task(config: dict, key: str, task_module) -> list:
     for t in tasks:
         name = t['name']
         params = t.get('params', {})
-        task_list.append(
-            get_module([task_module], name)(**params)
-        )
+        task_list.append(get_module([task_module], name)(**params))
     return task_list
 
 
@@ -116,17 +116,10 @@ def add_device(data, device):
 
 class CustomFilter(logging.Filter):
     """fillter for logger"""
-
     def filter(self, record):
-        record.real_filename = getattr(record,
-                                       'real_filename',
-                                       record.filename)
-        record.real_funcName = getattr(record,
-                                       'real_funcName',
-                                       record.funcName)
-        record.real_lineno = getattr(record,
-                                     'real_lineno',
-                                     record.lineno)
+        record.real_filename = getattr(record, 'real_filename', record.filename)
+        record.real_funcName = getattr(record, 'real_funcName', record.funcName)
+        record.real_lineno = getattr(record, 'real_lineno', record.lineno)
         return True
 
 
@@ -143,30 +136,22 @@ def get_logger(logdir_path=None):
     logger (logging.Logger): instance of logging.Logger
     """
 
-    log_format = (
-        '%(levelname)-8s - %(asctime)s - '
-        '[%(real_filename)s %(real_funcName)s %(real_lineno)d] %(message)s'
-    )
+    log_format = ('%(levelname)-8s - %(asctime)s - '
+                  '[%(real_filename)s %(real_funcName)s %(real_lineno)d] %(message)s')
 
     sh = logging.StreamHandler()
     sh.addFilter(CustomFilter())
     # sh.setLevel(logging.INFO)
 
     if logdir_path is None:
-        logging.basicConfig(handlers=[sh],
-                            format=log_format,
-                            level=logging.INFO)
+        logging.basicConfig(handlers=[sh], format=log_format, level=logging.INFO)
     else:
         if not os.path.exists(logdir_path):
             os.makedirs(logdir_path)
         logfile_path = logdir_path + str(datetime.date.today()) + '.log'
         fh = logging.FileHandler(logfile_path)
         fh.addFilter(CustomFilter())
-        logging.basicConfig(
-            handlers=[sh, fh],
-            format=log_format,
-            level=logging.INFO
-        )
+        logging.basicConfig(handlers=[sh, fh], format=log_format, level=logging.INFO)
 
     logger = logging.getLogger(__name__)
     return logger
@@ -180,7 +165,6 @@ def log(logger):
     logger (logging.Logger)
 
     """
-
     def _decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -202,4 +186,5 @@ def log(logger):
                 logging.info(f'[END] {func_name}', extra=extra)
 
         return wrapper
+
     return _decorator

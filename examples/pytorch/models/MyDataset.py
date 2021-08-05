@@ -11,30 +11,31 @@ class OnlyDiTauDataset_wo_mass(Dataset):
         permute = np.random.permutation(2 * max_events)
         np.random.set_state(cur_seed)
 
-        self.storegate = StoreGate(
-            backend='numpy',
-            data_id=''
-        )
+        self.storegate = StoreGate(backend='numpy', data_id='')
         self.jet_vals = [
-            '1stRecoJetPt', '1stRecoJetEta', '1stRecoJetPhi', '1stRecoJetMass',
-            '2ndRecoJetPt', '2ndRecoJetEta', '2ndRecoJetPhi', '2ndRecoJetMass'
+            '1stRecoJetPt', '1stRecoJetEta', '1stRecoJetPhi', '1stRecoJetMass', '2ndRecoJetPt',
+            '2ndRecoJetEta', '2ndRecoJetPhi', '2ndRecoJetMass'
         ]
         self.tau_vals = [
             '1stTruthTauJetPt', '1stTruthTauJetEta', '1stTruthTauJetPhi', '1stTruthTauJetMass',
             '2ndTruthTauJetPt', '2ndTruthTauJetEta', '2ndTruthTauJetPhi', '2ndTruthTauJetMass'
         ]
         self.tau_vals_wo_mass = [
-            '1stTruthTauJetPt', '1stTruthTauJetEta', '1stTruthTauJetPhi',
-            '2ndTruthTauJetPt', '2ndTruthTauJetEta', '2ndTruthTauJetPhi',
+            '1stTruthTauJetPt',
+            '1stTruthTauJetEta',
+            '1stTruthTauJetPhi',
+            '2ndTruthTauJetPt',
+            '2ndTruthTauJetEta',
+            '2ndTruthTauJetPhi',
         ]
         self.istau_vals = ['tauFlag1stJet', 'tauFlag2ndJet']
         self.label_vals = ['label']
         self.energy_vals = ['1stRecoJetEnergyMap', '2ndRecoJetEnergyMap']
         for path, var_names in [
-                ("jet.npy", self.jet_vals),
-                ("tau.npy", self.tau_vals),
-                ("istau.npy", self.istau_vals),
-                ("energy.npy", self.energy_vals),
+            ("jet.npy", self.jet_vals),
+            ("tau.npy", self.tau_vals),
+            ("istau.npy", self.istau_vals),
+            ("energy.npy", self.energy_vals),
         ]:
             data_list = []
             for label in ['Htautau', 'Zpure_tau']:
@@ -44,24 +45,20 @@ class OnlyDiTauDataset_wo_mass(Dataset):
             data_loaded = np.concatenate(data_list)
             data_loaded = data_loaded[permute]
 
-            self.storegate.update_data(
-                data_id='',
-                data=data_loaded,
-                var_names=var_names,
-                phase=(0.6, 0.2, 0.2)
-            )
+            self.storegate.update_data(data_id='',
+                                       data=data_loaded,
+                                       var_names=var_names,
+                                       phase=(0.6, 0.2, 0.2))
 
         labels = np.concatenate([
             np.ones(max_events),
             np.zeros(max_events),
         ])[permute]
 
-        self.storegate.update_data(
-            data_id='',
-            data=labels,
-            var_names='label',
-            phase=(0.6, 0.2, 0.2)
-        )
+        self.storegate.update_data(data_id='',
+                                   data=labels,
+                                   var_names='label',
+                                   phase=(0.6, 0.2, 0.2))
         self.storegate.compile()
         if phase is None:
             phase = 'train'
@@ -69,13 +66,11 @@ class OnlyDiTauDataset_wo_mass(Dataset):
         self._swich_phase()
 
     def _swich_phase(self):
-        self.energy = np.transpose(
-            self.storegate.get_data(
-                self.energy_vals,
-                self.phase,
-                '',
-            ), (0, 1, 4, 2, 3)
-        )
+        self.energy = np.transpose(self.storegate.get_data(
+            self.energy_vals,
+            self.phase,
+            '',
+        ), (0, 1, 4, 2, 3))
         self.jet_4vec = self.storegate.get_data(
             self.jet_vals,
             self.phase,
@@ -112,5 +107,9 @@ class OnlyDiTauDataset_wo_mass(Dataset):
         jet_4vec = self.jet_4vec[idx]
         tau4vec_target = self.tau4vec_target[idx]
         label = self.label[idx]
-        return {'inputs': [energy, jet_4vec], 'targets': [tau4vec_target, label],
-                'internal_vec': tau4vec_target, 'internal_label': label}
+        return {
+            'inputs': [energy, jet_4vec],
+            'targets': [tau4vec_target, label],
+            'internal_vec': tau4vec_target,
+            'internal_label': label
+        }

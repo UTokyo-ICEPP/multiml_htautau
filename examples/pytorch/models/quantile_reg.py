@@ -4,7 +4,6 @@ import lightgbm as lgb
 
 from MyDataset import OnlyDiTauDataset
 
-
 max_events, data_path, phase = 50000, '../../../../data/raw/onlyDiTau/', 'train'
 
 dataset = OnlyDiTauDataset(max_events, data_path, phase)
@@ -25,6 +24,8 @@ params = {
     'num_leaves': 9,
     # 'verbose': 0,
 }
+
+
 class quantile_req:
     def __init__(self, dataset, alpha, **params):
         self.dataset = dataset
@@ -38,6 +39,7 @@ class quantile_req:
         self.lower = []
         self._swich_phase()
         self.clf = lgb.LGBMRegressor(**self.params)
+
     def fit(self):
         for i in range(self.y_len):
             self.clf = lgb.LGBMRegressor(**self.params)
@@ -82,6 +84,7 @@ class quantile_req:
         self.dataset.test()
         self._swich_phase()
 
+
 qu = quantile_req(dataset, alpha, **params)
 qu.fit()
 
@@ -107,10 +110,8 @@ qu.fit()
 # )
 # plt.show()
 
-
 d = {0: 'pt', 1: 'eta', 2: 'phi', 3: 'mass'}
 num = 200
-
 
 for x_val_index in (0, 1, 2, 3):
     for y_val_index in (0, 1, 2, 3):
@@ -124,17 +125,13 @@ for x_val_index in (0, 1, 2, 3):
         import matplotlib.pyplot as plt
         plt.style.use('seaborn-darkgrid')
         plt.figure(figsize=(14, 4))
-        plt.scatter(input, output, c='darkgreen', s=5,
-                    label="valid data")
-        plt.plot(input[index], qu.pred[:, y_val_index][index],
-                 label="outputs of traind LightGBM")
-        plt.fill_between(
-            input[index],
-            qu.upper[:, y_val_index][index],
-            qu.lower[:, y_val_index][index],
-            alpha=0.6,
-            label='prediction interval'
-        )
+        plt.scatter(input, output, c='darkgreen', s=5, label="valid data")
+        plt.plot(input[index], qu.pred[:, y_val_index][index], label="outputs of traind LightGBM")
+        plt.fill_between(input[index],
+                         qu.upper[:, y_val_index][index],
+                         qu.lower[:, y_val_index][index],
+                         alpha=0.6,
+                         label='prediction interval')
         plt.xlabel(f'jet {d[x_val_index]}')
         plt.ylabel(f'tau {d[y_val_index]}')
         plt.savefig(f'lightGBM_traintrain_{d[x_val_index]}-{d[y_val_index]}.png')

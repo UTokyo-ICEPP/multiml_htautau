@@ -20,14 +20,8 @@ else:
 @click.option('--weight', '-w', type=float, default=0.5)
 @click.option('--load_weights', '-lw', type=bool, default=False)
 @click.option('--nopretraining', '-np', type=bool, default=False)
-def main(conf: str,
-         seed: int,
-         gpu_index: int,
-         data_path: str,
-         event: int,
-         weight: float,
-         load_weights: bool,
-         nopretraining: bool):
+def main(conf: str, seed: int, gpu_index: int, data_path: str, event: int, weight: float,
+         load_weights: bool, nopretraining: bool):
     global DEVICE
     from utils import load_config
     from run_utils import get_multi_loss, set_seed
@@ -90,8 +84,7 @@ def main(conf: str,
                 "optimizer_args": dict(lr=1e-3),
                 "variable_mapping": mapping_truth_corr,
                 "device": DEVICE,
-            }
-        )
+            })
 
     with timer(timer_reg, "execute"):
         agent.execute()
@@ -109,11 +102,9 @@ def main(conf: str,
 
     subtasks = []
     job_id = None
-    for task_id, subtask_id, params in zip(result['task_ids'],
-                                           result['subtask_ids'],
+    for task_id, subtask_id, params in zip(result['task_ids'], result['subtask_ids'],
                                            result['subtask_hps']):
-        subtask = task_scheduler.get_subtask(task_id=task_id,
-                                             subtask_id=subtask_id)
+        subtask = task_scheduler.get_subtask(task_id=task_id, subtask_id=subtask_id)
         params.update(load_weights=True, phases=['test'])
         subtask.env.set_hps(params)
         agent._execute_subtask(subtask, is_pretraining=True)

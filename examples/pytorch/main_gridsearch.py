@@ -25,7 +25,6 @@ from utils import (
     tensor_to_array,
 )
 
-
 log_dir = './logs/'
 logger = get_logger(logdir_path=log_dir)
 
@@ -34,30 +33,22 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
-
 FIRST_MODEL_NAME = ['MLP', 'CONV2D', 'SF']
 SECOND_MODEL_NAME = ['MLP', 'LSTM', 'MASS']
 
 
-def evaluate(model, conf, dataloader, metrics, result,
-             choice=None):
+def evaluate(model, conf, dataloader, metrics, result, choice=None):
     with torch.no_grad():
         logger.info('start eval mode')
         model.eval()
         dataloader.dataset.test()
         test_dataset = dataloader.dataset
-        test_dataloader = DataLoader(test_dataset,
-                                     batch_size=100,
-                                     shuffle=False)
+        test_dataloader = DataLoader(test_dataset, batch_size=100, shuffle=False)
         A = range(len(conf.sub_task_params.tau4vec.tasks))
         B = range(len(conf.sub_task_params.higgsId.tasks))
         num_name_conb = {
-            num: f'{f}_{s}' for num, (f, s) in zip(
-                product(A, B),
-                product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                )
-            )
+            num: f'{f}_{s}'
+            for num, (f, s) in zip(product(A, B), product(FIRST_MODEL_NAME, SECOND_MODEL_NAME))
         }
         outputs_data = []
         targets_data = []
@@ -82,76 +73,51 @@ def evaluate(model, conf, dataloader, metrics, result,
 
         c_1 = set_module([torch.nn, MyLoss], conf.SPOS_NAS, 'loss_first')
         c_2 = set_module([torch.nn, MyLoss], conf.SPOS_NAS, 'loss_second')
-        loss_1st = c_1(torch.tensor(temp_outputs_data),
-                       torch.tensor(temp_targets_data))
-        loss_2nd = c_2(torch.tensor(outputs_data),
-                       torch.tensor(targets_data))
+        loss_1st = c_1(torch.tensor(temp_outputs_data), torch.tensor(temp_targets_data))
+        loss_2nd = c_2(torch.tensor(outputs_data), torch.tensor(targets_data))
 
         from models.sub_task import set_phi_within_valid_range
 
         def reshape3vec(data):
             return data.reshape(-1, 3)
-        temp_outputs_data = set_phi_within_valid_range(
-            reshape3vec(temp_outputs_data)
-        )
-        upper = set_phi_within_valid_range(
-            reshape3vec(upper)
-        )
-        lower = set_phi_within_valid_range(
-            reshape3vec(lower)
-        )
+
+        temp_outputs_data = set_phi_within_valid_range(reshape3vec(temp_outputs_data))
+        upper = set_phi_within_valid_range(reshape3vec(upper))
+        lower = set_phi_within_valid_range(reshape3vec(lower))
         ratio = np.sum(
             np.where(
                 ((lower < upper)
-                 &
-                 (temp_outputs_data < upper)
-                 &
-                 (lower < temp_outputs_data))
+                 & (temp_outputs_data < upper)
+                 & (lower < temp_outputs_data))
+                | ((upper < lower)
+                   & (upper < temp_outputs_data)
+                   & (lower < temp_outputs_data))
                 |
                 ((upper < lower)
+                 & (temp_outputs_data < upper)
                  &
-                 (upper < temp_outputs_data)
-                 &
-                 (lower < temp_outputs_data))
-                |
-                ((upper < lower)
-                 &
-                 (temp_outputs_data < upper)
-                 &
-                 (temp_outputs_data < lower)),
-                True, False
-            ).all(axis=1)
-        )/(len(temp_outputs_data))
+                 (temp_outputs_data < lower)), True, False).all(axis=1)) / (len(temp_outputs_data))
         only_pt_ratio = np.sum(
             np.where(
                 ((lower[:, 0] < upper[:, 0])
-                 &
-                 (temp_outputs_data[:, 0] < upper[:, 0])
-                 &
-                 (lower[:, 0] < temp_outputs_data[:, 0]))
-                |
-                ((upper[:, 0] < lower[:, 0])
-                 &
-                 (upper[:, 0] < temp_outputs_data[:, 0])
-                 &
-                 (lower[:, 0] < temp_outputs_data[:, 0]))
+                 & (temp_outputs_data[:, 0] < upper[:, 0])
+                 & (lower[:, 0] < temp_outputs_data[:, 0]))
+                | ((upper[:, 0] < lower[:, 0])
+                   & (upper[:, 0] < temp_outputs_data[:, 0])
+                   & (lower[:, 0] < temp_outputs_data[:, 0]))
                 |
                 ((upper[:, 0] < lower[:, 0])
                  &
                  (temp_outputs_data[:, 0] < upper[:, 0])
                  &
-                 (temp_outputs_data[:, 0] < lower[:, 0])),
-                True, False
-            )
-        )/(len(temp_outputs_data))
+                 (temp_outputs_data[:, 0] < lower[:, 0])), True, False)) / (len(temp_outputs_data))
 
         result['RATIO'][num_name_conb[choice]].append(ratio)
         result['ONLY_PT_RATIO'][num_name_conb[choice]].append(only_pt_ratio)
         result['LOSS_1ST'][num_name_conb[choice]].append(loss_1st.item())
         result['LOSS_2ND'][num_name_conb[choice]].append(loss_2nd.item())
         logger.info(f'[Choice:{now_choice} / auc:{auc_score:.6f}] / ' +
-                    f'first_loss: {loss_1st:.6f} / ' +
-                    f'ratio: {ratio:.6f} / ' +
+                    f'first_loss: {loss_1st:.6f} / ' + f'ratio: {ratio:.6f} / ' +
                     f'only_pt_ratio: {only_pt_ratio:.6f} / ')
 
     logger.info(result)
@@ -188,9 +154,7 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     set_seed(conf.seed)
     dataset = set_module([MyDataset], conf, 'dataset')
     set_seed(conf.seed)
-    dataloader = DataLoader(dataset,
-                            batch_size=100,
-                            shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=100, shuffle=True)
     logger.info('set dataloader')
     # #########################################################################
     # pre-train ###############################################################
@@ -200,10 +164,7 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     for i, sub_model in enumerate(tau4vec):
         logger.info(f'pretrain: [0][{i}]')
         set_seed(conf.seed)
-        optimizer = set_module([optim],
-                               pretrain_conf,
-                               'optimizer',
-                               params=sub_model.parameters())
+        optimizer = set_module([optim], pretrain_conf, 'optimizer', params=sub_model.parameters())
         loss_func = set_module([nn, MyLoss], pretrain_conf, 'loss_func')
         metrics = set_module([MyMetrics], pretrain_conf, 'metrics')
         activation = set_module([nn], pretrain_conf, 'activation')
@@ -227,10 +188,7 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     for i, sub_model in enumerate(higgsId):
         logger.info(f'pretrain: [1][{i}]')
         set_seed(conf.seed)
-        optimizer = set_module([optim],
-                               pretrain_conf,
-                               'optimizer',
-                               params=sub_model.parameters())
+        optimizer = set_module([optim], pretrain_conf, 'optimizer', params=sub_model.parameters())
         loss_func = set_module([nn], pretrain_conf, 'loss_func')
         metrics = set_module([MyMetrics], pretrain_conf, 'metrics')
         activation = set_module([nn], pretrain_conf, 'activation')
@@ -260,8 +218,7 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     for num_task, sub in enumerate(task):
         for num_model in range(len(sub)):
             pre_trained_model[num_task][num_model].load_state_dict(
-                deepcopy(task[num_task][num_model].state_dict())
-            )
+                deepcopy(task[num_task][num_model].state_dict()))
     # #########################################################################
     # #########################################################################
 
@@ -271,47 +228,33 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     def make_output_dict():
         return {
             'X': [],
-            'AUC': {
-                f'{f}_{s}': [] for f, s in product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                )
-            },
-            'LOSS_1ST': {
-                f'{f}_{s}': [] for f, s in product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                    )
-            },
-            'LOSS_2ND': {
-                f'{f}_{s}': [] for f, s in product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                )
-            },
-            'RATIO': {
-                f'{f}_{s}': [] for f, s in product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                    )
-            },
-            'ONLY_PT_RATIO': {
-                f'{f}_{s}': [] for f, s in product(
-                    FIRST_MODEL_NAME, SECOND_MODEL_NAME
-                    )
-            },
+            'AUC': {f'{f}_{s}': []
+                    for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
+            'LOSS_1ST': {f'{f}_{s}': []
+                         for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
+            'LOSS_2ND': {f'{f}_{s}': []
+                         for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
+            'RATIO': {f'{f}_{s}': []
+                      for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
+            'ONLY_PT_RATIO':
+            {f'{f}_{s}': []
+             for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
         }
 
     # evaluate only pre-train model
-    loss_func = [set_module([nn, MyLoss], sposnas_conf, 'loss_first'),
-                 set_module([nn, MyLoss], sposnas_conf, 'loss_second')]
+    loss_func = [
+        set_module([nn, MyLoss], sposnas_conf, 'loss_first'),
+        set_module([nn, MyLoss], sposnas_conf, 'loss_second')
+    ]
     loss_weight = [0.5, 0.5]
     metrics = get_module([MyMetrics], 'Calc_Auc')()
     from models.SPOS_NAS import SPOS
-    model = SPOS(task=task, loss_func=loss_func,
-                 loss_weight=loss_weight)
+    model = SPOS(task=task, loss_func=loss_func, loss_weight=loss_weight)
     model.to(DEVICE)
     logger.info('evaluate only pre-train model')
     dummy = make_output_dict()
     for now_choice in product(range(3), range(3)):
-        pre_train_result = evaluate(model, conf, dataloader, metrics, dummy,
-                                    now_choice)
+        pre_train_result = evaluate(model, conf, dataloader, metrics, dummy, now_choice)
 
     output_dict = make_output_dict()
     X_list = [0.0, 0.1, 0.5]
@@ -325,25 +268,22 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
             for num_task, sub in enumerate(task):
                 for num_model in range(len(sub)):
                     task[num_task][num_model].load_state_dict(
-                        deepcopy(pre_trained_model[num_task][num_model].state_dict())
-                    )
+                        deepcopy(pre_trained_model[num_task][num_model].state_dict()))
             logger.info('load pretrain models done')
 
         logger.info('set model parameters...')
-        loss_func = [set_module([nn, MyLoss], sposnas_conf, 'loss_first'),
-                     set_module([nn, MyLoss], sposnas_conf, 'loss_second')]
-        loss_weight = [X, 1.-X]
+        loss_func = [
+            set_module([nn, MyLoss], sposnas_conf, 'loss_first'),
+            set_module([nn, MyLoss], sposnas_conf, 'loss_second')
+        ]
+        loss_weight = [X, 1. - X]
         metrics = get_module([MyMetrics], 'Calc_Auc')()
 
         for now_choice in product(range(3), range(3)):
             initialize_pretrain_weight()
-            model = SPOS(task=task, loss_func=loss_func,
-                         loss_weight=loss_weight)
+            model = SPOS(task=task, loss_func=loss_func, loss_weight=loss_weight)
             model.to(DEVICE)
-            optimizer = set_module([optim],
-                                   sposnas_conf,
-                                   'optimizer',
-                                   params=model.parameters())
+            optimizer = set_module([optim], sposnas_conf, 'optimizer', params=model.parameters())
             scheduler = set_module([optim.lr_scheduler],
                                    sposnas_conf,
                                    'scheduler',
@@ -359,12 +299,7 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
                       choice=now_choice)
             logger.info('fit model done')
             logger.info('eval model...')
-            output_dict = evaluate(model,
-                                   conf,
-                                   dataloader,
-                                   metrics,
-                                   output_dict,
-                                   now_choice)
+            output_dict = evaluate(model, conf, dataloader, metrics, output_dict, now_choice)
             logger.info('eval model done')
 
     logger.info(f'seed: {conf.seed}/ pretrain result: {pre_train_result}')
@@ -378,11 +313,9 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     plt.style.use('seaborn-darkgrid')
     import pandas as pd
     df = pd.DataFrame(output_dict['AUC'], index=output_dict['X'])
-    df = df.rename(columns={
-        f'{f}_{s}': f'{f}:{s}' for f, s in product(
-            FIRST_MODEL_NAME, SECOND_MODEL_NAME
-        )
-    })
+    df = df.rename(
+        columns={f'{f}_{s}': f'{f}:{s}'
+                 for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)})
     df.plot()
     plt.xlabel('X')
     plt.ylabel('AUC')
@@ -393,11 +326,9 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     import matplotlib.pyplot as plt
     plt.style.use('seaborn-darkgrid')
     df = pd.DataFrame(output_dict['LOSS_2ND'], index=output_dict['X'])
-    df = df.rename(columns={
-        f'{f}_{s}': f'{f}:{s}' for f, s in product(
-            FIRST_MODEL_NAME, SECOND_MODEL_NAME
-        )
-    })
+    df = df.rename(
+        columns={f'{f}_{s}': f'{f}:{s}'
+                 for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)})
     df.plot()
     plt.xlabel('X')
     plt.ylabel('LOSS_2ND')
@@ -408,11 +339,9 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     import matplotlib.pyplot as plt
     plt.style.use('seaborn-darkgrid')
     df = pd.DataFrame(output_dict['LOSS_1ST'], index=output_dict['X'])
-    df = df.rename(columns={
-        f'{f}_{s}': f'{f}:{s}' for f, s in product(
-            FIRST_MODEL_NAME, SECOND_MODEL_NAME
-        )
-    })
+    df = df.rename(
+        columns={f'{f}_{s}': f'{f}:{s}'
+                 for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)})
     df.plot()
     plt.xlabel('X')
     plt.ylabel('LOSS_1ST')
@@ -423,11 +352,9 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     import matplotlib.pyplot as plt
     plt.style.use('seaborn-darkgrid')
     df = pd.DataFrame(output_dict['ONLY_PT_RATIO'], index=output_dict['X'])
-    df = df.rename(columns={
-        f'{f}_{s}': f'{f}:{s}' for f, s in product(
-            FIRST_MODEL_NAME, SECOND_MODEL_NAME
-        )
-    })
+    df = df.rename(
+        columns={f'{f}_{s}': f'{f}:{s}'
+                 for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)})
     df.plot()
     plt.ylabel('ratio')
     plt.savefig(f'grid_only_pt_ratio_{conf.seed}.png')
@@ -435,11 +362,9 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
     import matplotlib.pyplot as plt
     plt.style.use('seaborn-darkgrid')
     df = pd.DataFrame(output_dict['RATIO'], index=output_dict['X'])
-    df = df.rename(columns={
-        f'{f}_{s}': f'{f}:{s}' for f, s in product(
-            FIRST_MODEL_NAME, SECOND_MODEL_NAME
-        )
-    })
+    df = df.rename(
+        columns={f'{f}_{s}': f'{f}:{s}'
+                 for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)})
     df.plot()
     plt.ylabel('ratio')
     plt.savefig(f'grid_ratio_{conf.seed}.png')

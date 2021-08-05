@@ -5,12 +5,12 @@ class Tau4vec_Conv2DTask(Tau4vec_BaseTask):
     ''' Tau4vec Conv2D MLP task
     '''
     def __init__(self,
-                   layers_conv2d=None,
-                   layers_images=None,
-                   layers_calib=None,
-                   activation=None,
-                   batch_norm=False,
-                   **kwargs):
+                 layers_conv2d=None,
+                 layers_images=None,
+                 layers_calib=None,
+                 activation=None,
+                 batch_norm=False,
+                 **kwargs):
         """
 
         Args:

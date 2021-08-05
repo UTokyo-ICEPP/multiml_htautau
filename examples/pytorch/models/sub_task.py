@@ -10,7 +10,12 @@ from utils import (
 logger = get_logger()
 
 
-def train(model, dataloader, input_key, target_key, optimizer, loss_func,
+def train(model,
+          dataloader,
+          input_key,
+          target_key,
+          optimizer,
+          loss_func,
           device=torch.device('cpu')):
     train_loss = 0.0
     for step, data in enumerate(dataloader):
@@ -26,8 +31,7 @@ def train(model, dataloader, input_key, target_key, optimizer, loss_func,
         dataloader.set_postfix(log=postfix)
 
 
-def valid(model, dataloader, input_key, target_key,
-          device=torch.device('cpu'), activation=None):
+def valid(model, dataloader, input_key, target_key, device=torch.device('cpu'), activation=None):
     outputs_data = []
     targets_data = []
     for step, data in enumerate(dataloader):
@@ -42,11 +46,17 @@ def valid(model, dataloader, input_key, target_key,
     return outputs_data, targets_data
 
 
-def pre_train(epochs, model, dataloader,
-              optimizer, loss_func,
-              input_key, target_key,
+def pre_train(epochs,
+              model,
+              dataloader,
+              optimizer,
+              loss_func,
+              input_key,
+              target_key,
               device=torch.device('cpu'),
-              patience=5, metrics=None, activation=None):
+              patience=5,
+              metrics=None,
+              activation=None):
     from tqdm import tqdm
     logger.info(model)
     model.to(device)
@@ -56,12 +66,9 @@ def pre_train(epochs, model, dataloader,
         model.train()
         dataloader.dataset.train()
         train_data = tqdm(dataloader)
-        train_data.set_description(
-            f"[Epoch:{epoch+1:04d}/{epochs:04d} " +
-            f"lr:{optimizer.param_groups[0]['lr']:.5f}]"
-        )
-        train(model, train_data, input_key, target_key,
-              optimizer, criterion, device)
+        train_data.set_description(f"[Epoch:{epoch+1:04d}/{epochs:04d} " +
+                                   f"lr:{optimizer.param_groups[0]['lr']:.5f}]")
+        train(model, train_data, input_key, target_key, optimizer, criterion, device)
 
         with torch.no_grad():
             model.eval()
@@ -73,14 +80,12 @@ def pre_train(epochs, model, dataloader,
                                                target_key,
                                                device=device,
                                                activation=activation)
-            valid_loss = criterion(torch.tensor(outputs_data),
-                                   torch.tensor(targets_data))
+            valid_loss = criterion(torch.tensor(outputs_data), torch.tensor(targets_data))
             if metrics is None:
                 s = f'[Epoch:{epoch+1:04d}|valid| / '\
                     f'loss:{valid_loss:.6f}]'
             else:
-                score = metrics(np.array(targets_data),
-                                np.array(outputs_data))
+                score = metrics(np.array(targets_data), np.array(outputs_data))
                 s = f'[Epoch:{epoch+1:04d}|valid| / '\
                     f'loss:{valid_loss:.6f} / '\
                     f'metrics:{score:.6f}]'
@@ -144,9 +149,7 @@ class EarlyStopping:
 
         if self.best_score is None:
             self.best_score = score
-            self.best_model = deepcopy(
-                self.save_checkpoint(val_loss, model)
-            )
+            self.best_model = deepcopy(self.save_checkpoint(val_loss, model))
         elif score <= self.best_score:
             self.counter += 1
             logger.info(f'EarlyStopping counter: {self.counter} out of {self.patience}')
@@ -155,17 +158,16 @@ class EarlyStopping:
         else:
             self.best_score = score
             self.counter = 0
-            self.best_model = deepcopy(
-                self.save_checkpoint(val_loss, model)
-            )
+            self.best_model = deepcopy(self.save_checkpoint(val_loss, model))
 
         return self.best_model
 
     def save_checkpoint(self, val_loss, model):
         '''Saves model when validation loss decrease.'''
         if self.verbose:
-            logger.info(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  ' +
-                        'updating model ...')
+            logger.info(
+                f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  ' +
+                'updating model ...')
         if self.save:
             from os.path import join
             save_path = join(self.path, 'checkpoint.pt')
@@ -191,10 +193,10 @@ class MLPBlock(nn.Module):
             if i == len(layers) - 1:
                 break
             else:
-                _layers.append(nn.Linear(layers[i], layers[i+1]))
+                _layers.append(nn.Linear(layers[i], layers[i + 1]))
 
             if batch_norm:
-                _layers.append(nn.BatchNorm1d(layers[i+1]))
+                _layers.append(nn.BatchNorm1d(layers[i + 1]))
 
             if i == len(layers) - 2:
                 if activation_last is None:
@@ -297,11 +299,25 @@ class Conv2DBlock(nn.Module):
 
 class Tau4vec_Conv2DTask(nn.Module):
     def __init__(self,
-                 layers_conv2d=[('conv2d', {'in_channels': 3, 'out_channels': 32, 'kernel_size': 3}),
-                                ('conv2d', {'in_channels': 32, 'out_channels': 16, 'kernel_size': 3}),
-                                ('maxpooling2d', {}),
-                                ('conv2d', {'in_channels': 16, 'out_channels': 16, 'kernel_size': 2}),
-                                ('conv2d', {'in_channels': 16, 'out_channels': 8, 'kernel_size': 2})],
+                 layers_conv2d=[('conv2d', {
+                     'in_channels': 3,
+                     'out_channels': 32,
+                     'kernel_size': 3
+                 }), ('conv2d', {
+                     'in_channels': 32,
+                     'out_channels': 16,
+                     'kernel_size': 3
+                 }), ('maxpooling2d', {}),
+                                ('conv2d', {
+                                    'in_channels': 16,
+                                    'out_channels': 16,
+                                    'kernel_size': 2
+                                }),
+                                ('conv2d', {
+                                    'in_channels': 16,
+                                    'out_channels': 8,
+                                    'kernel_size': 2
+                                })],
                  layers_images=[128, 16, 16, 16, 4],
                  layers_calib=[8, 64, 64, 64, 4],
                  activation='ReLU',
@@ -345,12 +361,8 @@ class Tau4vec_Conv2DTask(nn.Module):
 class SF_layer(nn.Module):
     def __init__(self, input_dim):
         super(SF_layer, self).__init__()
-        self.sf = nn.Parameter(torch.Tensor(
-            np.ones(input_dim)
-        ))
-        self.bias = nn.Parameter(torch.Tensor(
-            np.zeros(input_dim)
-        ))
+        self.sf = nn.Parameter(torch.Tensor(np.ones(input_dim)))
+        self.bias = nn.Parameter(torch.Tensor(np.zeros(input_dim)))
 
     def forward(self, x):
         return x * self.sf + self.bias
@@ -359,15 +371,15 @@ class SF_layer(nn.Module):
 class Tau4vec_SFTask(nn.Module):
     def __init__(self, n_input_vars=8, n_output_vars=6, n_jets=2):
         super(Tau4vec_SFTask, self).__init__()
-        self.sf_layer = SF_layer(input_dim=(1, n_output_vars//2))
+        self.sf_layer = SF_layer(input_dim=(1, n_output_vars // 2))
         self.n_input_vars = n_input_vars
         self.n_output_vars = n_output_vars
         self.n_jets = n_jets
 
     def forward(self, x):
-        x = x[1].reshape(-1, self.n_input_vars//self.n_jets)
+        x = x[1].reshape(-1, self.n_input_vars // self.n_jets)
         if self.n_output_vars == 6:
-            x = x[:, :3]        # mass is not used
+            x = x[:, :3]  # mass is not used
         x = self.sf_layer(x)
 
         x = set_phi_within_valid_range(x)
@@ -410,7 +422,7 @@ class LSTMBlock(nn.Module):
             if i == len(layers) - 1:
                 break
             else:
-                _layers[f'LSTM{i}'] = nn.LSTM(layers[i], layers[i+1])
+                _layers[f'LSTM{i}'] = nn.LSTM(layers[i], layers[i + 1])
 
         if batch_norm:
             _layers['batchnorm1d'] = nn.BatchNorm1d(layers[-1])
@@ -453,17 +465,14 @@ class HiggsID_LSTMTask(nn.Module):
         super(HiggsID_LSTMTask, self).__init__(**kwargs)
         self.layers_lstm = layers_lstm
         self.n_jets = n_jets
-        self.lstm = LSTMBlock(layers=layers_lstm,
-                              batch_norm=batch_norm)
+        self.lstm = LSTMBlock(layers=layers_lstm, batch_norm=batch_norm)
         self.mlp = MLPBlock(layers=layers_mlp,
                             activation='Identity',
                             activation_last=activation_last,
                             batch_norm=batch_norm)
 
     def forward(self, x):
-        x = torch.transpose(
-            x.reshape(-1, self.n_jets, self.layers_lstm[0]),
-            1, 0)
+        x = torch.transpose(x.reshape(-1, self.n_jets, self.layers_lstm[0]), 1, 0)
         x = self.lstm(x)[-1]
         x = self.mlp(x)
         return x
@@ -475,7 +484,7 @@ class HiggsID_MassTask(nn.Module):
                  activation='ReLU',
                  activation_last='Identity',
                  batch_norm=False,
-                 scale_mass=1./125.,
+                 scale_mass=1. / 125.,
                  n_jets=2,
                  n_input_vars=8,
                  **kwargs):
@@ -498,9 +507,7 @@ class HiggsID_MassTask(nn.Module):
     @staticmethod
     def mass_layer(tau_4vec, n_jets, n_input_vars):
         tau_4vec = tau_4vec.reshape(-1, n_jets, n_input_vars // n_jets)
-        pt = torch.exp(
-            torch.clamp(tau_4vec[:, :, 0], min=-7., max=7.)
-        ) - 0.1
+        pt = torch.exp(torch.clamp(tau_4vec[:, :, 0], min=-7., max=7.)) - 0.1
         eta = tau_4vec[:, :, 1]
         phi = tau_4vec[:, :, 2]
         mass = 1.777
@@ -509,16 +516,12 @@ class HiggsID_MassTask(nn.Module):
         py = pt * torch.sin(phi)
         pz = pt * torch.sinh(torch.clamp(eta, min=-5, max=5))
         epsilon = 0.1  # avoid nan when e=0. sqrt(x)^' = -1/2 * 1/sqrt(x)
-        e = torch.sqrt(
-            epsilon + px**2 + py**2 + pz**2 + mass**2
-        )
+        e = torch.sqrt(epsilon + px**2 + py**2 + pz**2 + mass**2)
 
         tau_4vec = torch.stack([px, py, pz, e], dim=2)
         tau_4vec = torch.sum(tau_4vec, dim=1)
         px, py, pz, e = torch.chunk(tau_4vec, chunks=4, dim=1)
-        mass = torch.sqrt(
-            epsilon + e**2 - (px**2 + py**2 + pz**2)
-        )
+        mass = torch.sqrt(epsilon + e**2 - (px**2 + py**2 + pz**2))
         return mass
 
 

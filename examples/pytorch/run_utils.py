@@ -15,11 +15,9 @@ def preprocessing(save_dir,
 
     # Storegate
     from my_storegate import get_storegate
-    
-    storegate = get_storegate(
-        data_path=config.dataset.params.data_path,
-        max_events=config.dataset.params.max_events
-    )
+
+    storegate = get_storegate(data_path=config.dataset.params.data_path,
+                              max_events=config.dataset.params.max_events)
 
     # Task scheduler
     from multiml.task_scheduler import TaskScheduler
@@ -34,7 +32,7 @@ def preprocessing(save_dir,
                                         subtask_names=higgsId_tasks,
                                         truth_input=truth_intermediate_inputs,
                                         load_weights=load_weights,
-                                        use_logits = True)
+                                        use_logits=True)
         task_scheduler.add_task(task_id='higgsId',
                                 parents=['tau4vec'],
                                 children=[],
@@ -45,7 +43,7 @@ def preprocessing(save_dir,
                                         subtask_names=tau4vec_tasks,
                                         device=device,
                                         load_weights=load_weights)
-                                        
+
         task_scheduler.add_task(task_id='tau4vec',
                                 parents=[],
                                 children=['higgsId'],
@@ -57,7 +55,7 @@ def preprocessing(save_dir,
                                        device=device,
                                        subtask_names=higgsId_tasks,
                                        load_weights=load_weights,
-                                       use_logits = True)
+                                       use_logits=True)
         task_scheduler.add_task(task_id='higgsId', subtasks=subtask)
 
     elif len(tau4vec_tasks) > 0:
@@ -75,16 +73,12 @@ def preprocessing(save_dir,
     if len(tau4vec_tasks) > 0 and len(higgsId_tasks) == 0:
         from multiml_htautau.task.metrics import CustomMSEMetric
         from my_tasks import corr_tau_4vec, truth_tau_4vec
-        metric = CustomMSEMetric(
-            pred_var_name=corr_tau_4vec,
-            true_var_name=truth_tau_4vec,
-            phase='test'
-        )
+        metric = CustomMSEMetric(pred_var_name=corr_tau_4vec,
+                                 true_var_name=truth_tau_4vec,
+                                 phase='test')
     else:
         from multiml.agent.metric import AUCMetric
-        metric = AUCMetric(pred_var_name='probability',
-                           true_var_name='label',
-                           phase='test')
+        metric = AUCMetric(pred_var_name='probability', true_var_name='label', phase='test')
 
     return saver, storegate, task_scheduler, metric
 

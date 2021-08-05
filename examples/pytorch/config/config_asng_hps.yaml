@@ -63,9 +63,9 @@ sub_task_params:
               - ['AdaptiveAvgPool2d', {'output_size' : 1}]
               
           layers_images: [[128, 16, 16, 16, 4], [128, 64, 64, 32, 32, 16, 16, 4], [128, 256, 256, 256, 16, 4]]
-          layers_calib: [ [8, 64, 64, 64, 3], [8, 256, 256, 128, 3], [8, 16, 32, 64, 128, 256, 128, 64, 3]]
-          activation: ['ReLU', 'LeakyReLU', 'GELU', 'CELU']
-          activation_last: ['Softmax', 'Sigmoid']
+          layers_calib: [ [8, 64, 64, 64, 3], [8, 256, 256, 128, 3], [8, 8, 16, 32, 64, 128, 256, 3]]
+          activation: ['ReLU', 'LeakyReLU', 'GELU', 'CELU', 'Identity']
+          activation_last: ['Softmax', 'Sigmoid', 'Identity']
           batch_norm: [True]
       Tau4vec_SFTask:
         params:
@@ -102,11 +102,11 @@ sub_task_params:
           batch_norm: [True, False]
       HiggsID_LSTMTask:
         params:
-          layers_lstm: [[3, 32, 32, 32, 2], [3, 16, 32, 64, 128, 16, 2], [3, 256, 256, 256, 2]]
+          layers_lstm: [[3, 32, 32, 32, 2], [3, 16, 32, 64, 128, 16, 2], [3, 256, 256, 256, 2], [3,1024,1024,1024,2]]
           layers_mlp: [[2, 1], [2, 4, 16, 32, 1], [2, 256, 256, 256, 1], [2,4,8,16,32,64,32,16,8,4,2,1] ] 
-          activation_lstm: ['ReLU', 'LeakyReLU', 'GELU', 'CELU']
-          activation_mlp: ['ReLU', 'LeakyReLU', 'GELU', 'CELU']
-          activation_last: ['Softmax', 'Sigmoid']
+          activation_lstm: ['ReLU', 'LeakyReLU', 'GELU', 'CELU', 'Identity']
+          activation_mlp: ['ReLU', 'LeakyReLU', 'GELU', 'CELU', 'Identity']
+          activation_last: ['Softmax', 'Sigmoid', 'Identity']
           batch_norm_lstm: [False]
           batch_norm_mlp: [True]
           n_jets: *n_jets
@@ -139,7 +139,7 @@ sub_task_params:
       verbose: 1
 ASNG:
   epochs: 100
-  batch_size: {'type':'equal_length', 'length':500, 'test' : 250}
+  batch_size: {'type':'equal_length', 'length':250, 'test' : 250}
   patience: 20
   tau4vec_tasks: ['conv2D']
   higgsId_tasks: ['lstm']
@@ -152,10 +152,10 @@ ASNG:
     params:
       lr: 1.0e-3
   scheduler:
-    name: StepLR
+    name: MultiStepLR
     params:
-      step_size: 20
-      gamma: 0.2
+      milestones: [10, 20, 40, 60, 80]
+      gamma: 1.0
   data:
     input_key: inputs
     target_key: targets
@@ -177,9 +177,9 @@ ASNG:
     scheduler: MultiStepLR
     scheduler_args:
       milestones: [10, 20, 40, 60, 80]
-      gamma: 0.2
+      gamma: 1.0
     verbose: 1
-    metrics: ['loss']
+    metrics: ['loss', 'subloss']
     phases: ['train', 'valid', 'test']
     variable_mapping: None
     device: None
@@ -194,7 +194,7 @@ re_train:
     name: MultiStepLR
     params:
       milestones: [10, 20, 30, 40, 50, 75, 100]
-      gamma: 0.5                # 1倍のことなので変化されない
+      gamma: 1.0                # 1倍のことなので変化されない
   data:
     input_key: inputs
     target_key: targets

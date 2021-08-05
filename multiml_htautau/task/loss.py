@@ -44,8 +44,8 @@ class Tau4vecCalibLoss_tf():
         from tensorflow import reshape, concat, expand_dims
         from tensorflow.keras import backend as K
 
-        assert(K.int_shape(y_true)[-1] == 3 * 2)
-        assert(K.int_shape(y_pred)[-1] == 3 * 2)
+        assert (K.int_shape(y_true)[-1] == 3 * 2)
+        assert (K.int_shape(y_pred)[-1] == 3 * 2)
         y_true = reshape(y_true, [-1, 3])
         y_pred = reshape(y_pred, [-1, 3])
 
@@ -84,8 +84,8 @@ class Tau4vecCalibLoss_np():
     def __call__(self, y_true, y_pred):
         from numpy import square, mean, reshape, concatenate, expand_dims
 
-        assert(y_true.shape[-1] == 3 * 2)
-        assert(y_pred.shape[-1] == 3 * 2)
+        assert (y_true.shape[-1] == 3 * 2)
+        assert (y_pred.shape[-1] == 3 * 2)
         y_true = reshape(y_true, [-1, 3])
         y_pred = reshape(y_pred, [-1, 3])
 
@@ -145,25 +145,21 @@ class Tau4vecCalibLoss_torch(object):
 
         return stack([px, py, pz], axis=1)
 
-    def _delta_phi_torch(self,
-                         x: Tensor,
-                         y: Tensor) -> Tensor:
+    def _delta_phi_torch(self, x: Tensor, y: Tensor) -> Tensor:
         from torch import stack
         d = (x - y).abs()
         test = stack([d, self._period - d], axis=1)
         return test.min(axis=1).values
 
-    def __call__(self,
-                 output: Tensor,
-                 target: Tensor) -> Tensor:
+    def __call__(self, output: Tensor, target: Tensor) -> Tensor:
         """
         Args:
             output (Tensor): output of model
             target (Tensor): target
         """
         from torch import cat
-        assert(output.shape[-1] == 3 * 2)
-        assert(target.shape[-1] == 3 * 2)
+        assert (output.shape[-1] == 3 * 2)
+        assert (target.shape[-1] == 3 * 2)
         output = output.reshape(-1, 3)
         target = target.reshape(-1, 3)
 
@@ -171,15 +167,9 @@ class Tau4vecCalibLoss_torch(object):
             output = self._convert_to_pxyz(output)
             target = self._convert_to_pxyz(target)
             return (target - output).pow(2).mean()
-            
+
         else:
             d_sq = (target - output).pow(2)
-            d_phi = (
-                self._delta_phi_torch(target[:, 2], output[:, 2])
-            ).pow(2)
-            diff = cat(
-                [d_sq[:, 0:2], d_phi.unsqueeze(1)],
-                axis=-1
-            )
-            return diff.mean() 
-
+            d_phi = (self._delta_phi_torch(target[:, 2], output[:, 2])).pow(2)
+            diff = cat([d_sq[:, 0:2], d_phi.unsqueeze(1)], axis=-1)
+            return diff.mean()

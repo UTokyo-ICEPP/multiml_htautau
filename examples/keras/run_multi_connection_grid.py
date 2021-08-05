@@ -3,6 +3,7 @@ import os
 save_dir = f'output/{os.path.basename(__file__)[:-3]}'
 
 from run_utils import common_parser
+
 parser = common_parser()
 parser.add_argument("--fix_submodel_weights",
                     action="store_true",
@@ -10,12 +11,15 @@ parser.add_argument("--fix_submodel_weights",
 args = parser.parse_args()
 
 from run_utils import add_suffix
+
 save_dir = add_suffix(save_dir, args)
 
 from run_utils import get_config_multi_loss
+
 use_multi_loss, loss_weights = get_config_multi_loss(args)
 
 from run_utils import preprocessing
+
 saver, storegate, task_scheduler, metric = preprocessing(
     save_dir=save_dir,
     args=args,
@@ -25,6 +29,7 @@ saver, storegate, task_scheduler, metric = preprocessing(
 
 # Time measurements
 from timer import timer
+
 timer_reg = {}
 
 # Agent
@@ -76,7 +81,8 @@ result, config = agent.get_best_result()
 
 subtasks = []
 job_id = None
-for task_id, subtask_id, params in zip(result['task_ids'], result['subtask_ids'], result['subtask_hps']):
+for task_id, subtask_id, params in zip(result['task_ids'], result['subtask_ids'],
+                                       result['subtask_hps']):
     subtask = task_scheduler.get_subtask(task_id=task_id, subtask_id=subtask_id)
     params.update(save_weights=False, load_weights=True, phases=['test'])
     subtask.env.set_hps(params)
@@ -84,14 +90,18 @@ for task_id, subtask_id, params in zip(result['task_ids'], result['subtask_ids']
     subtasks.append(subtask.env)
     job_id = params['job_id']
 
-subtask = agent._build_connected_models(subtasks, job_id=config["job_id"], use_task_scheduler=False)
+subtask = agent._build_connected_models(subtasks,
+                                        job_id=config["job_id"],
+                                        use_task_scheduler=False)
 subtask.env.set_hps({"save_weights": False, "load_weights": True, "phases": ['test']})
 agent._execute_subtask(subtask, is_pretraining=False)
 
 metric.storegate = storegate
 result_metric = metric.calculate()
 from multiml import logger
+
 logger.info(f'metric = {result_metric}')
 
 from run_utils import postprocessing
+
 postprocessing(saver, storegate, args, do_probability=True, do_tau4vec=True)

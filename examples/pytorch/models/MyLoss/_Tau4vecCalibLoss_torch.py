@@ -46,25 +46,21 @@ class Tau4vecCalibLoss_torch(object):
 
         return stack([px, py, pz], axis=1)
 
-    def _delta_phi_torch(self,
-                         x: Tensor,
-                         y: Tensor) -> Tensor:
+    def _delta_phi_torch(self, x: Tensor, y: Tensor) -> Tensor:
         from torch import stack
         d = (x - y).abs()
         test = stack([d, self._period - d], axis=1)
         return test.min(axis=1).values
 
-    def __call__(self,
-                 output: Tensor,
-                 target: Tensor) -> Tensor:
+    def __call__(self, output: Tensor, target: Tensor) -> Tensor:
         """
         Args:
             output (Tensor): output of model
             target (Tensor): target
         """
         from torch import cat
-        assert(output.shape[-1] == 3 * 2)
-        assert(target.shape[-1] == 3 * 2)
+        assert (output.shape[-1] == 3 * 2)
+        assert (target.shape[-1] == 3 * 2)
         output = output.reshape(-1, 3)
         target = target.reshape(-1, 3)
 
@@ -75,11 +71,6 @@ class Tau4vecCalibLoss_torch(object):
 
         else:
             d_sq = (target - output).pow(2)
-            d_phi = (
-                self._delta_phi_torch(target[:, 2], output[:, 2])
-            ).pow(2)
-            diff = cat(
-                [d_sq[:, 0:2], d_phi.unsqueeze(1)],
-                axis=-1
-            )
+            d_phi = (self._delta_phi_torch(target[:, 2], output[:, 2])).pow(2)
+            diff = cat([d_sq[:, 0:2], d_phi.unsqueeze(1)], axis=-1)
             return diff.mean()

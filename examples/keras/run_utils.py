@@ -1,15 +1,8 @@
 def common_parser():
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument("-s",
-                        "--seed",
-                        dest="seed",
-                        help="seed",
-                        type=int,
-                        default=42)
-    parser.add_argument("--load_weights",
-                        action="store_true",
-                        help="Load pretrained models")
+    parser.add_argument("-s", "--seed", dest="seed", help="seed", type=int, default=42)
+    parser.add_argument("--load_weights", action="store_true", help="Load pretrained models")
     parser.add_argument("--data_path",
                         dest="data_path",
                         help="input data path",
@@ -42,25 +35,13 @@ def common_parser():
                         help="dropout_rate",
                         type=float,
                         default=None)
-    parser.add_argument("--nopretraining",
-                        action="store_true",
-                        help="do not pretraining")
+    parser.add_argument("--nopretraining", action="store_true", help="do not pretraining")
     parser.add_argument("--remove_dummy_models",
                         action="store_true",
                         help="Do not use dummy models (zero and noise)")
-    parser.add_argument("--run_eagerly",
-                        action="store_true",
-                        help="Run by eager mode")
-    parser.add_argument("--log_level",
-                        dest="log_level",
-                        help="log level",
-                        type=int,
-                        default=10)
-    parser.add_argument("--igpu",
-                        dest="igpu",
-                        help="GPU index",
-                        type=int,
-                        default=0)
+    parser.add_argument("--run_eagerly", action="store_true", help="Run by eager mode")
+    parser.add_argument("--log_level", dest="log_level", help="log level", type=int, default=10)
+    parser.add_argument("--igpu", dest="igpu", help="GPU index", type=int, default=0)
     return parser
 
 
@@ -91,7 +72,7 @@ def plot_performance(saver, storegate, do_probability=True, do_tau4vec=True):
     if do_probability:
         from plot_utils import plot_classification
         plot_classification(storegate=storegate,
-                            var_pred=('probability',),
+                            var_pred=('probability', ),
                             var_target=('label'),
                             data_id="",
                             phase="test",
@@ -138,8 +119,7 @@ def copy_outputfiles(output_destname):
     # Copy output files
     if output_destname is not None:
         import subprocess
-        subprocess.check_call(
-            ['gsutil', 'cp', 'output.tar.gz', output_destname])
+        subprocess.check_call(['gsutil', 'cp', 'output.tar.gz', output_destname])
 
     # For debug
     import os
@@ -225,7 +205,9 @@ def preprocessing(save_dir,
     if len(tau4vec_tasks) > 0 and len(higgsId_tasks) == 0:
         from multiml_htautau.task.metrics import CustomMSEMetric
         from my_tasks import corr_tau_4vec, truth_tau_4vec
-        metric = CustomMSEMetric(pred_var_name=corr_tau_4vec, true_var_name=truth_tau_4vec, phase='test')
+        metric = CustomMSEMetric(pred_var_name=corr_tau_4vec,
+                                 true_var_name=truth_tau_4vec,
+                                 phase='test')
     else:
         from multiml.agent.metric import AUCMetric
         metric = AUCMetric(pred_var_name='probability', true_var_name='label', phase='test')
@@ -233,17 +215,10 @@ def preprocessing(save_dir,
     return saver, storegate, task_scheduler, metric
 
 
-def postprocessing(saver,
-                   storegate,
-                   args,
-                   do_probability=True,
-                   do_tau4vec=True):
+def postprocessing(saver, storegate, args, do_probability=True, do_tau4vec=True):
     # Performance check
     from run_utils import plot_performance
-    plot_performance(saver,
-                     storegate,
-                     do_probability=do_probability,
-                     do_tau4vec=do_tau4vec)
+    plot_performance(saver, storegate, do_probability=do_probability, do_tau4vec=do_tau4vec)
 
     # Compress and copy output files
     if args.output_destname is not None:

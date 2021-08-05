@@ -25,7 +25,6 @@ from utils import (
     tensor_to_array,
 )
 
-
 log_dir = './logs/connection/'
 logger = get_logger(logdir_path=log_dir)
 
@@ -33,7 +32,6 @@ if torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
-
 
 FIRST_MODEL_NAME = ['MLP', 'CONV2D', 'SF']
 SECOND_MODEL_NAME = ['MLP', 'LSTM', 'MASS']
@@ -73,9 +71,7 @@ class Tauvec_BaseTask(PytorchBaseTask):
 
         self._device = device
         from torch import optim
-        self._optimizer = get_module([optim], optimizer)(
-            model.parameters()
-        )
+        self._optimizer = get_module([optim], optimizer)(model.parameters())
         self._do_manual_decay = do_manual_decay
         self._hp_epochs = hp_epochs
         self._hp_lr = hp_lr
@@ -93,10 +89,7 @@ class Tauvec_BaseTask(PytorchBaseTask):
         torch.backends.cudnn.benchmark = True
 
         from models.sub_task import EarlyStopping
-        early_stopping = EarlyStopping(
-            patience=self._patience,
-            verbose=True
-        )
+        early_stopping = EarlyStopping(patience=self._patience, verbose=True)
         for epoch in range(1, self._hp_epochs + 1):
             for phase in ['train', 'valid']:
                 if phase == 'train':
@@ -121,11 +114,8 @@ class Tauvec_BaseTask(PytorchBaseTask):
         total = 0
 
         getattr(self._dataloaders.dataset, phase)()
-        with tqdm(total=len(self._dataloaders),
-                  unit="batch",
-                  ncols=120) as pbar:
-            pbar.set_description(
-                f"Epoch [{epoch}/{self._hp_epochs}] ({phase.ljust(5)})")
+        with tqdm(total=len(self._dataloaders), unit="batch", ncols=120) as pbar:
+            pbar.set_description(f"Epoch [{epoch}/{self._hp_epochs}] ({phase.ljust(5)})")
 
             for data in self._dataloaders:
                 inputs = add_device(data[self._input_key], self._device)
@@ -144,10 +134,7 @@ class Tauvec_BaseTask(PytorchBaseTask):
 
                     running_loss = epoch_loss / total
 
-                    pbar.set_postfix({
-                        "loss": f'{running_loss:.4f}',
-                        "lr": f'{self._lr:.4f}'
-                    })
+                    pbar.set_postfix({"loss": f'{running_loss:.4f}', "lr": f'{self._lr:.4f}'})
                     pbar.update(1)
         if phase == 'valid':
             logger.info(f'Epoch [{epoch}/{self._hp_epochs}] ({phase.ljust(6)})'
@@ -189,37 +176,19 @@ class Tauvec_BaseTask(PytorchBaseTask):
         def reshape3vec(data):
             return data.reshape(-1, 3)
 
-        results = set_phi_within_valid_range(
-            reshape3vec(results)
-        )
-        upper = set_phi_within_valid_range(
-            reshape3vec(upper)
-        )
-        lower = set_phi_within_valid_range(
-            reshape3vec(lower)
-        )
+        results = set_phi_within_valid_range(reshape3vec(results))
+        upper = set_phi_within_valid_range(reshape3vec(upper))
+        lower = set_phi_within_valid_range(reshape3vec(lower))
         ratio = np.sum(
-            np.where(
-                ((lower < upper)
-                 &
-                 (results < upper)
-                 &
-                 (lower < results))
-                |
-                ((upper < lower)
-                 &
-                 (upper < results)
-                 &
-                 (lower < results))
-                |
-                ((upper < lower)
-                 &
-                 (results < upper)
-                 &
-                 (results < lower)),
-                True, False
-            ).all(axis=1)
-        )/(len(results))
+            np.where(((lower < upper)
+                      & (results < upper)
+                      & (lower < results))
+                     | ((upper < lower)
+                        & (upper < results)
+                        & (lower < results))
+                     | ((upper < lower)
+                        & (results < upper)
+                        & (results < lower)), True, False).all(axis=1)) / (len(results))
 
         return running_loss, ratio
 
@@ -265,9 +234,7 @@ class HiggsId_BaseTask(PytorchBaseTask):
         self._preprocess = preprocess
         self._device = device
         from torch import optim
-        self._optimizer = get_module([optim], optimizer)(
-            model.parameters()
-        )
+        self._optimizer = get_module([optim], optimizer)(model.parameters())
         self._metrics = metrics
         if isinstance(activation, str):
             self._activation = get_module([nn], activation)()
@@ -290,10 +257,7 @@ class HiggsId_BaseTask(PytorchBaseTask):
         torch.backends.cudnn.benchmark = True
 
         from models.sub_task import EarlyStopping
-        early_stopping = EarlyStopping(
-            patience=self._patience,
-            verbose=True
-        )
+        early_stopping = EarlyStopping(patience=self._patience, verbose=True)
         for epoch in range(1, self._hp_epochs + 1):
             for phase in ['train', 'valid']:
                 if phase == 'train':
@@ -319,11 +283,8 @@ class HiggsId_BaseTask(PytorchBaseTask):
         total = 0
 
         getattr(self._dataloaders.dataset, phase)()
-        with tqdm(total=len(self._dataloaders),
-                  unit="batch",
-                  ncols=120) as pbar:
-            pbar.set_description(
-                f"Epoch [{epoch}/{self._hp_epochs}] ({phase.ljust(5)})")
+        with tqdm(total=len(self._dataloaders), unit="batch", ncols=120) as pbar:
+            pbar.set_description(f"Epoch [{epoch}/{self._hp_epochs}] ({phase.ljust(5)})")
 
             for data in self._dataloaders:
                 inputs = add_device(data[self._input_key], self._device)
@@ -362,10 +323,7 @@ class HiggsId_BaseTask(PytorchBaseTask):
                                  f'loss/{running_loss}  '
                                  f'metrics/{running_metrics}')
                     else:
-                        s = {
-                            "loss": f'{running_loss:.4f}',
-                            "lr": f'{self._lr:.4f}'
-                        }
+                        s = {"loss": f'{running_loss:.4f}', "lr": f'{self._lr:.4f}'}
                         log_s = (f'Epoch [{epoch}/{self._hp_epochs}] ({phase.ljust(6)})'
                                  f'{self._model.__class__.__name__} (Loss_2ND) :'
                                  f'loss/{running_loss}')
@@ -414,22 +372,14 @@ class HiggsId_BaseTask(PytorchBaseTask):
 
 def make_output_dict():
     return {
-        'AUC': {
-            f'{f}:{s}': [] for f, s in product(
-                FIRST_MODEL_NAME, SECOND_MODEL_NAME
-            )
-        },
-        'LOSS_1ST': {
-            f: [] for f in FIRST_MODEL_NAME
-        },
-        'LOSS_2ND': {
-            f'{f}:{s}': [] for f, s in product(
-                FIRST_MODEL_NAME, SECOND_MODEL_NAME
-            )
-        },
-        'RATIO': {
-            f: [] for f in FIRST_MODEL_NAME
-        },
+        'AUC': {f'{f}:{s}': []
+                for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
+        'LOSS_1ST': {f: []
+                     for f in FIRST_MODEL_NAME},
+        'LOSS_2ND': {f'{f}:{s}': []
+                     for f, s in product(FIRST_MODEL_NAME, SECOND_MODEL_NAME)},
+        'RATIO': {f: []
+                  for f in FIRST_MODEL_NAME},
     }
 
 
@@ -438,9 +388,7 @@ def evaluate(tau4vec, pretrained_higgsId, dataloader, conf, device):
         logger.info('start eval mode')
         dataloader.dataset.test()
         test_dataset = dataloader.dataset
-        test_dataloader = DataLoader(test_dataset,
-                                     batch_size=100,
-                                     shuffle=False)
+        test_dataloader = DataLoader(test_dataset, batch_size=100, shuffle=False)
         result = make_output_dict()
 
         pretrain_conf = conf.sub_task_params.tau4vec.pretrain
@@ -452,24 +400,18 @@ def evaluate(tau4vec, pretrained_higgsId, dataloader, conf, device):
             model = tau4vec[i]
             model.to(device)
             tauvec_ins = Tauvec_BaseTask()
-            tauvec_ins.initialize(
-                model=model,
-                dataloaders=test_dataloader,
-                input_key=input_key,
-                target_key=target_key,
-                criterion=loss_func,
-                device=device
-            )
-            (
-                result['LOSS_1ST'][model_name],
-                result['RATIO'][model_name]
-            ) = tauvec_ins.predict_model()
+            tauvec_ins.initialize(model=model,
+                                  dataloaders=test_dataloader,
+                                  input_key=input_key,
+                                  target_key=target_key,
+                                  criterion=loss_func,
+                                  device=device)
+            (result['LOSS_1ST'][model_name],
+             result['RATIO'][model_name]) = tauvec_ins.predict_model()
 
         for i, j in product(range(3), range(3)):
             pretrain_conf = conf.sub_task_params.higgsId.pretrain
-            model = pretrained_higgsId[
-                f'{FIRST_MODEL_NAME[i]}:{SECOND_MODEL_NAME[j]}'
-            ]
+            model = pretrained_higgsId[f'{FIRST_MODEL_NAME[i]}:{SECOND_MODEL_NAME[j]}']
             model.to(device)
             preprocess = tau4vec[i]
             loss_func = set_module([nn, MyLoss], pretrain_conf, 'loss_func')
@@ -479,25 +421,18 @@ def evaluate(tau4vec, pretrained_higgsId, dataloader, conf, device):
             input_key = pretrain_conf.data.input_key
             target_key = pretrain_conf.data.target_key
             higgsid_ins = HiggsId_BaseTask()
-            higgsid_ins.initialize(
-                model=model,
-                dataloaders=test_dataloader,
-                input_key=input_key,
-                target_key=target_key,
-                criterion=loss_func,
-                preprocess=preprocess,
-                device=device,
-                metrics=metrics,
-                activation=activation
-            )
-            (
-                result['LOSS_2ND'][
-                    f'{FIRST_MODEL_NAME[i]}:{SECOND_MODEL_NAME[j]}'
-                ],
-                result['AUC'][
-                    f'{FIRST_MODEL_NAME[i]}:{SECOND_MODEL_NAME[j]}'
-                ]
-            ) = higgsid_ins.predict_model()
+            higgsid_ins.initialize(model=model,
+                                   dataloaders=test_dataloader,
+                                   input_key=input_key,
+                                   target_key=target_key,
+                                   criterion=loss_func,
+                                   preprocess=preprocess,
+                                   device=device,
+                                   metrics=metrics,
+                                   activation=activation)
+            (result['LOSS_2ND'][f'{FIRST_MODEL_NAME[i]}:{SECOND_MODEL_NAME[j]}'],
+             result['AUC'][f'{FIRST_MODEL_NAME[i]}:{SECOND_MODEL_NAME[j]}']
+             ) = higgsid_ins.predict_model()
 
     logger.info(result)
     return result
@@ -539,8 +474,7 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
         for num_task, sub in enumerate(task):
             for num_model in range(len(sub)):
                 pre_model[num_task][num_model].load_state_dict(
-                    task[num_task][num_model].state_dict()
-                )
+                    task[num_task][num_model].state_dict())
         # #####################################################################
         # #####################################################################
         from models import MyDataset
@@ -548,9 +482,7 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
         set_seed(conf.seed)
         dataset = set_module([MyDataset], conf, 'dataset')
         set_seed(conf.seed)
-        dataloader = DataLoader(dataset,
-                                batch_size=100,
-                                shuffle=True)
+        dataloader = DataLoader(dataset, batch_size=100, shuffle=True)
         logger.info('set dataloader')
         # #####################################################################
         # pre-train ###########################################################
@@ -569,18 +501,16 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
             lr = pretrain_conf.optimizer.params.lr
             tauvec_base = Tauvec_BaseTask()
             model = sub_model.to(device)
-            tauvec_base.initialize(
-                model=model,
-                dataloaders=dataloader,
-                input_key=input_key,
-                target_key=target_key,
-                criterion=loss_func,
-                device=device,
-                optimizer=optimizer,
-                hp_epochs=epochs,
-                lr=lr,
-                patience=patience
-            )
+            tauvec_base.initialize(model=model,
+                                   dataloaders=dataloader,
+                                   input_key=input_key,
+                                   target_key=target_key,
+                                   criterion=loss_func,
+                                   device=device,
+                                   optimizer=optimizer,
+                                   hp_epochs=epochs,
+                                   lr=lr,
+                                   patience=patience)
             tauvec_base.execute()
             tau4vec[i] = tauvec_base.get_model()
         logger.info('----- pretrain[0] end -----')
@@ -604,29 +534,24 @@ def main(conf: str, seed: int, gpu_index: int, data_path: str):
             patience = pretrain_conf.patience
             lr = pretrain_conf.optimizer.params.lr
             higgsid_base = HiggsId_BaseTask()
-            higgsid_base.initialize(
-                model=model,
-                dataloaders=dataloader,
-                input_key=input_key,
-                target_key=target_key,
-                criterion=loss_func,
-                preprocess=tau4vec[i],
-                device=device,
-                optimizer=optimizer,
-                metrics=metrics,
-                activation=activation,
-                hp_epochs=epochs,
-                lr=lr,
-                patience=patience
-            )
+            higgsid_base.initialize(model=model,
+                                    dataloaders=dataloader,
+                                    input_key=input_key,
+                                    target_key=target_key,
+                                    criterion=loss_func,
+                                    preprocess=tau4vec[i],
+                                    device=device,
+                                    optimizer=optimizer,
+                                    metrics=metrics,
+                                    activation=activation,
+                                    hp_epochs=epochs,
+                                    lr=lr,
+                                    patience=patience)
             higgsid_base.execute()
             pretrained_higgsId[
-                f'{FIRST_MODEL_NAME[i]}:{SECOND_MODEL_NAME[j]}'
-            ] = higgsid_base.get_model()
+                f'{FIRST_MODEL_NAME[i]}:{SECOND_MODEL_NAME[j]}'] = higgsid_base.get_model()
         logger.info('----- pretrain[1] end -----')
-        results[conf.seed] = evaluate(
-            tau4vec, pretrained_higgsId, dataloader, conf, device
-        )
+        results[conf.seed] = evaluate(tau4vec, pretrained_higgsId, dataloader, conf, device)
         logger.info(results)
 
     logger.info(results)

@@ -5,8 +5,7 @@ from multiml.task.keras import KerasBaseTask
 class Tau4vec_BaseTask(KerasBaseTask):
     ''' Keras MLP task
     '''
-    def __init__(self, input_vars_energy, input_vars_jet,
-                   input_njets, **kwargs):
+    def __init__(self, input_vars_energy, input_vars_jet, input_njets, **kwargs):
         '''
 
         Args:
@@ -47,7 +46,7 @@ class Tau4vec_BaseTask(KerasBaseTask):
     def _set_phi_within_valid_range(x):
         from tensorflow.keras import backend as K
 
-        assert(K.int_shape(x) == (None, 3))
+        assert (K.int_shape(x) == (None, 3))
 
         x_phi = x[:, 2]
         x_phi = Tau4vec_BaseTask._wrap_phi_to_2pi(x_phi)

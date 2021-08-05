@@ -6,8 +6,7 @@ from multiml.task.pytorch import PytorchBaseTask
 class Tau4vec_BaseTask(PytorchBaseTask):
     ''' Pytorch MLP task
     '''
-    def __init__(self, input_vars_energy, input_vars_jet,
-                 input_njets, **kwargs):
+    def __init__(self, input_vars_energy, input_vars_jet, input_njets, **kwargs):
         '''
 
         Args:

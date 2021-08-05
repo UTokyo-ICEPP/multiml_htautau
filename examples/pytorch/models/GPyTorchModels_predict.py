@@ -66,13 +66,8 @@ def main(use_pxyz: bool):
         y = torch.tensor(y).reshape(-1, 3)
         y = loss_ins._convert_to_pxyz(y).reshape(-1, 6)
     y = tau_rscaler.transform(y)
-    test_dataset = torch.utils.data.TensorDataset(
-        torch.tensor(x), torch.tensor(y)
-    )
-    test_dataloader = DataLoader(test_dataset,
-                                 batch_size=batch_size,
-                                 shuffle=False,
-                                 num_workers=2)
+    test_dataset = torch.utils.data.TensorDataset(torch.tensor(x), torch.tensor(y))
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
     model = MultitaskGPModel(inducing_points_num=inducing_points_num,
                              input_dim=input_dim,
@@ -98,19 +93,9 @@ def main(use_pxyz: bool):
         likelihood.eval()
         for step, (x, y) in enumerate(test_dataloader):
             prediction = likelihood(model(x))
-            pred.append(
-                tau_rscaler.inverse_transform(prediction.mean)
-            )
-            lower.append(
-                tau_rscaler.inverse_transform(
-                    prediction.confidence_region()[0]
-                )
-            )
-            upper.append(
-                tau_rscaler.inverse_transform(
-                    prediction.confidence_region()[1]
-                )
-            )
+            pred.append(tau_rscaler.inverse_transform(prediction.mean))
+            lower.append(tau_rscaler.inverse_transform(prediction.confidence_region()[0]))
+            upper.append(tau_rscaler.inverse_transform(prediction.confidence_region()[1]))
         pred = np.concatenate(pred)
         lower = np.concatenate(lower)
         upper = np.concatenate(upper)
@@ -119,10 +104,8 @@ def main(use_pxyz: bool):
         p = '_xyz'
     else:
         p = ''
-    np.savetxt('../logs/GP_upper'+p+'.csv', upper,
-               delimiter=',', newline='\n')
-    np.savetxt('../logs/GP_lower'+p+'.csv', lower,
-               delimiter=',', newline='\n')
+    np.savetxt('../logs/GP_upper' + p + '.csv', upper, delimiter=',', newline='\n')
+    np.savetxt('../logs/GP_lower' + p + '.csv', lower, delimiter=',', newline='\n')
     if use_pxyz:
         d = {0: 'pt', 1: 'eta', 2: 'phi', 3: 'mass'}
         o = {0: 'px', 1: 'py', 2: 'pz'}
@@ -132,29 +115,21 @@ def main(use_pxyz: bool):
     num = 200
     for x_val_index in range(4):
         for y_val_index in range(3):
-            input = jet_rscaler.inverse_transform(
-                test_dataset[:, :][0]
-            )[:num, x_val_index]
-            output = tau_rscaler.inverse_transform(
-                test_dataset[:, :][1]
-            )[:num, y_val_index]
+            input = jet_rscaler.inverse_transform(test_dataset[:, :][0])[:num, x_val_index]
+            output = tau_rscaler.inverse_transform(test_dataset[:, :][1])[:num, y_val_index]
             index = np.argsort(input)
 
             import matplotlib.pyplot as plt
             plt.rcParams["font.size"] = 15
             plt.style.use('seaborn-darkgrid')
             plt.figure(figsize=(14, 4))
-            plt.scatter(input, output, c='darkgreen',
-                        s=10, label="test data")
-            plt.plot(input[index], pred[:, y_val_index][index],
-                     label="outputs of GP model")
-            plt.fill_between(
-                input[index],
-                upper[:, y_val_index][index],
-                lower[:, y_val_index][index],
-                alpha=0.6,
-                label='2$\sigma$ prediction interval'
-            )
+            plt.scatter(input, output, c='darkgreen', s=10, label="test data")
+            plt.plot(input[index], pred[:, y_val_index][index], label="outputs of GP model")
+            plt.fill_between(input[index],
+                             upper[:, y_val_index][index],
+                             lower[:, y_val_index][index],
+                             alpha=0.6,
+                             label='2$\sigma$ prediction interval')
             plt.xlabel(f'jet {d[x_val_index]}')
             plt.ylabel(f'tau {o[y_val_index]}')
             plt.legend()

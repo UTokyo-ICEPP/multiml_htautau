@@ -12,11 +12,7 @@ def plot_roc_curve(pred, target, figure_name="tmp.png"):
     from sklearn.metrics import auc
     roc_auc = auc(fpr, tpr)
 
-    plt.plot(fpr,
-             tpr,
-             lw=1,
-             alpha=0.3,
-             label=f'ROC fold (AUC = {roc_auc :0.3f})')
+    plt.plot(fpr, tpr, lw=1, alpha=0.3, label=f'ROC fold (AUC = {roc_auc :0.3f})')
     plt.legend()
     plt.xlabel('False positive (BG efficiency)')
     plt.ylabel('True positive (Sig efficiency)')
@@ -47,10 +43,8 @@ def plot_classification(storegate,
                         phase="test",
                         save_dir="tmp"):
     storegate.set_data_id(data_id)
-    y_test = storegate.get_data(phase=phase,
-                                var_names=var_target)
-    y_pred = storegate.get_data(phase=phase,
-                                var_names=var_pred)
+    y_test = storegate.get_data(phase=phase, var_names=var_target)
+    y_pred = storegate.get_data(phase=phase, var_names=var_pred)
 
     fpr, tpr = get_roc_curve(y_pred, y_test)
     with open(f"{save_dir}/fpr_tpr.pkl", 'wb') as f:
@@ -67,10 +61,8 @@ def plot_regression(storegate,
                     phase="test",
                     save_dir="tmp"):
     storegate.set_data_id(data_id)
-    y_test = storegate.get_data(phase=phase,
-                                var_names=var_target)
-    y_pred = storegate.get_data(phase=phase,
-                                var_names=var_pred)
+    y_test = storegate.get_data(phase=phase, var_names=var_target)
+    y_pred = storegate.get_data(phase=phase, var_names=var_pred)
 
     from multiml_htautau.task.loss import Tau4vecCalibLoss_np
     mse = Tau4vecCalibLoss_np(pt_scale=1e-2, use_pxyz=True)(y_test, y_pred)
@@ -86,15 +78,9 @@ def plot_regression(storegate,
     plot_regression_pull(y_pred, y_test, var_target, save_dir)
 
 
-def plot_system_mass(storegate,
-                     var_pred=[],
-                     label="",
-                     data_id="",
-                     phase="test",
-                     save_dir="tmp"):
+def plot_system_mass(storegate, var_pred=[], label="", data_id="", phase="test", save_dir="tmp"):
     storegate.set_data_id(data_id)
-    y_pred = storegate.get_data(phase=phase,
-                                var_names=var_pred)
+    y_pred = storegate.get_data(phase=phase, var_names=var_pred)
     label = storegate.get_data(phase=phase, var_names=label)
     is_sig = (label == 1.)
     is_bkg = (label == 0.)
@@ -137,15 +123,10 @@ def plot_system_mass(storegate,
     plt.close()
 
 
-def dump_predictions(storegate,
-                     variables=[],
-                     data_id="",
-                     phase="test",
-                     save_dir="tmp"):
+def dump_predictions(storegate, variables=[], data_id="", phase="test", save_dir="tmp"):
 
     storegate.set_data_id(data_id)
-    y_pred = storegate.get_data(phase=phase,
-                                var_names=variables)
+    y_pred = storegate.get_data(phase=phase, var_names=variables)
 
     import os
     import numpy as np

@@ -13,15 +13,11 @@ def get_storegate(data_path='/tmp/onlyDiTau/', max_events=50000):
     storegate = StoreGate(backend='numpy', data_id='')
 
     for path, var_names in [
-        ("jet.npy", (
-            '1stRecoJetPt', '1stRecoJetEta', '1stRecoJetPhi', '1stRecoJetMass',
-            '2ndRecoJetPt', '2ndRecoJetEta', '2ndRecoJetPhi', '2ndRecoJetMass'
-        )),
-        ("tau.npy", (
-            '1stTruthTauJetPt', '1stTruthTauJetEta', '1stTruthTauJetPhi',
-            '1stTruthTauJetMass', '2ndTruthTauJetPt', '2ndTruthTauJetEta',
-            '2ndTruthTauJetPhi', '2ndTruthTauJetMass'
-        )),
+        ("jet.npy", ('1stRecoJetPt', '1stRecoJetEta', '1stRecoJetPhi', '1stRecoJetMass',
+                     '2ndRecoJetPt', '2ndRecoJetEta', '2ndRecoJetPhi', '2ndRecoJetMass')),
+        ("tau.npy",
+         ('1stTruthTauJetPt', '1stTruthTauJetEta', '1stTruthTauJetPhi', '1stTruthTauJetMass',
+          '2ndTruthTauJetPt', '2ndTruthTauJetEta', '2ndTruthTauJetPhi', '2ndTruthTauJetMass')),
         ("istau.npy", ('tauFlag1stJet', 'tauFlag2ndJet')),
         ("energy.npy", ('1stRecoJetEnergyMap', '2ndRecoJetEnergyMap')),
     ]:
@@ -33,11 +29,7 @@ def get_storegate(data_path='/tmp/onlyDiTau/', max_events=50000):
         data_loaded = np.concatenate(data_list)
         data_loaded = data_loaded[permute]
 
-        storegate.update_data(
-            data=data_loaded,
-            var_names=var_names,
-            phase=(0.6, 0.2, 0.2)
-        )
+        storegate.update_data(data=data_loaded, var_names=var_names, phase=(0.6, 0.2, 0.2))
 
     # # Added TauMass
     # tau_mass = np.full(shape=2 * max_events, fill_value=1.777)
@@ -54,11 +46,7 @@ def get_storegate(data_path='/tmp/onlyDiTau/', max_events=50000):
         np.zeros(max_events),
     ])[permute]
 
-    storegate.update_data(
-        data=labels,
-        var_names='label',
-        phase=(0.6, 0.2, 0.2)
-    )
+    storegate.update_data(data=labels, var_names='label', phase=(0.6, 0.2, 0.2))
 
     storegate.compile()
     storegate.show_info()

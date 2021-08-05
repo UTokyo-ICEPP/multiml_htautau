@@ -25,8 +25,7 @@ corr_tau_4vec = (
     '2ndCorrTauJetPhi',
 )
 
-mapping_truth_corr = [(v1, v2)
-                      for v1, v2 in zip(truth_tau_4vec, corr_tau_4vec)]
+mapping_truth_corr = [(v1, v2) for v1, v2 in zip(truth_tau_4vec, corr_tau_4vec)]
 
 
 def get_higgsId_subtasks(config,
@@ -44,17 +43,17 @@ def get_higgsId_subtasks(config,
     conf = config.pretrain
     higgsId_args = {
         'saver': saver,
-        'output_var_names': ('probability',),
-        'true_var_names': ('label',),
+        'output_var_names': ('probability', ),
+        'true_var_names': ('label', ),
         'optimizer': conf.optimizer.name,
-        'optimizer_args': dict( **conf.optimizer.params ),
+        'optimizer_args': dict(**conf.optimizer.params),
         'num_epochs': conf.epochs,
         "max_patience": conf.patience,
         'batch_size': conf.batch_size,
         'save_weights': True,
         'load_weights': False,
         'device': device,
-        'verbose':conf.verbose,
+        'verbose': conf.verbose,
     }
     if load_weights:
         higgsId_args['load_weights'] = True
@@ -71,8 +70,7 @@ def get_higgsId_subtasks(config,
         higgsId_args['input_var_names'] = truth_tau_4vec
     else:
         higgsId_args['input_var_names'] = corr_tau_4vec
-    
-    
+
     from multiml.hyperparameter import Hyperparameters
     for subtask_name in subtask_names:
         subtask = {}
@@ -81,26 +79,28 @@ def get_higgsId_subtasks(config,
             conf = config.tasks.HiggsID_MLPTask
             subtask['subtask_id'] = 'higgsId-mlp'
             subtask['env'] = HiggsID_MLPTask(**higgsId_args)
-            subtask['hps'] = Hyperparameters(
-                {'layers': conf.params.layers, 
-                'activation': conf.params.activation, 
-                'activation_last': conf.params.activation_last, 
-                'batch_norm' : conf.params.batch_norm,} )
-            
+            subtask['hps'] = Hyperparameters({
+                'layers': conf.params.layers,
+                'activation': conf.params.activation,
+                'activation_last': conf.params.activation_last,
+                'batch_norm': conf.params.batch_norm,
+            })
+
         elif subtask_name == 'lstm':
             from multiml_htautau.task.pytorch import HiggsID_LSTMTask
             conf = config.tasks.HiggsID_LSTMTask
             subtask['subtask_id'] = 'higgsId-lstm'
-            subtask['env'] = HiggsID_LSTMTask( n_jets=conf.params.n_jets, **higgsId_args)
-            subtask['hps'] = Hyperparameters(
-                {'layers_lstm': conf.params.layers_lstm, 
-                'layers_mlp' : conf.params.layers_mlp,
-                'activation_lstm': conf.params.activation_lstm, 
-                'activation_mlp': conf.params.activation_mlp, 
-                'activation_last' : conf.params.activation_last,
-                'batch_norm_lstm' : conf.params.batch_norm_lstm,
-                'batch_norm_mlp' : conf.params.batch_norm_mlp})
-        
+            subtask['env'] = HiggsID_LSTMTask(n_jets=conf.params.n_jets, **higgsId_args)
+            subtask['hps'] = Hyperparameters({
+                'layers_lstm': conf.params.layers_lstm,
+                'layers_mlp': conf.params.layers_mlp,
+                'activation_lstm': conf.params.activation_lstm,
+                'activation_mlp': conf.params.activation_mlp,
+                'activation_last': conf.params.activation_last,
+                'batch_norm_lstm': conf.params.batch_norm_lstm,
+                'batch_norm_mlp': conf.params.batch_norm_mlp
+            })
+
         elif subtask_name == 'mass':
             from multiml_htautau.task.pytorch import HiggsID_MassTask
             conf = config.tasks.HiggsID_MassTask
@@ -110,12 +110,13 @@ def get_higgsId_subtasks(config,
                                               scale_mass=conf.params.scale_mass,
                                               **higgsId_args)
 
-            subtask['hps'] = Hyperparameters(
-                {'layers' : conf.params.layers,
-                'activation' : conf.params.activation,
-                'activation_last' : conf.params.activation_last,
-                'batch_norm' : conf.params.batch_norm })
-        
+            subtask['hps'] = Hyperparameters({
+                'layers': conf.params.layers,
+                'activation': conf.params.activation,
+                'activation_last': conf.params.activation_last,
+                'batch_norm': conf.params.batch_norm
+            })
+
         else:
             raise KeyError(f"subtask_name = {subtask_name} is not defined.")
 
@@ -143,7 +144,7 @@ def get_tau4vec_subtasks(config,
         'output_var_names': corr_tau_4vec,
         'input_njets': 2,
         'optimizer': conf.optimizer.name,
-        'optimizer_args': dict( **conf.optimizer.params ),
+        'optimizer_args': dict(**conf.optimizer.params),
         'loss': Tau4vecCalibLoss_torch(pt_scale=1e-2, use_pxyz=True),
         'num_epochs': conf.epochs,
         "max_patience": conf.patience,
@@ -151,7 +152,7 @@ def get_tau4vec_subtasks(config,
         'save_weights': True,
         'load_weights': False,
         'device': device,
-        'verbose':conf.verbose,
+        'verbose': conf.verbose,
     }
     if load_weights:
         tau4vec_args['load_weights'] = True
@@ -168,11 +169,10 @@ def get_tau4vec_subtasks(config,
             subtask['hps'] = Hyperparameters({
                 'layers_images': conf.params.layers_images,
                 'layers_calib': conf.params.layers_calib,
-                'batch_norm' : conf.params.batch_norm,
-                'activation' : conf.params.activation,
-                'activation_last' : conf.params.activation_last,
+                'batch_norm': conf.params.batch_norm,
+                'activation': conf.params.activation,
+                'activation_last': conf.params.activation_last,
             })
-
 
         elif subtask_name == 'conv2D':
             from multiml_htautau.task.pytorch import Tau4vec_Conv2DTask
@@ -183,10 +183,10 @@ def get_tau4vec_subtasks(config,
             subtask['hps'] = Hyperparameters({
                 'layers_conv2d': conf.params.layers_conv2d,
                 'layers_images': conf.params.layers_images,
-                'layers_calib': conf.params.layers_calib ,
-                'batch_norm' : conf.params.batch_norm,
-                'activation' : conf.params.activation,
-                'activation_last' : conf.params.activation_last,
+                'layers_calib': conf.params.layers_calib,
+                'batch_norm': conf.params.batch_norm,
+                'activation': conf.params.activation,
+                'activation_last': conf.params.activation_last,
             })
 
         elif subtask_name == 'SF':

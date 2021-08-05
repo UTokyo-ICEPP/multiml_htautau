@@ -30,8 +30,7 @@ def setup_tensorflow(seed=None, igpu=0):
             logical_gpus = tf.config.list_logical_devices('GPU')
             print('available GPU:', logical_gpus)
         else:
-            tf_config = tf.ConfigProto(gpu_options=tf.GPUOptions(
-                allow_growth=True))
+            tf_config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
             from keras import backend as K
             sess = tf.Session(config=tf_config)
             K.set_session(sess)

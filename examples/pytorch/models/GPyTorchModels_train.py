@@ -59,9 +59,7 @@ def main(use_pxyz: bool):
         y = loss_ins._convert_to_pxyz(y).reshape(-1, 6)
     tau_rscaler = preprocessing.RobustScaler(quantile_range=(25., 75.))
     y = tau_rscaler.fit_transform(y)
-    train_dataset = torch.utils.data.TensorDataset(
-        torch.tensor(x), torch.tensor(y)
-    )
+    train_dataset = torch.utils.data.TensorDataset(torch.tensor(x), torch.tensor(y))
     dataset.valid()
     x = copy(dataset[:len(dataset)]['inputs'][1])
     y = copy(dataset[:len(dataset)]['internal_vec'])
@@ -70,9 +68,7 @@ def main(use_pxyz: bool):
         y = torch.tensor(y).reshape(-1, 3)
         y = loss_ins._convert_to_pxyz(y).reshape(-1, 6)
     y = tau_rscaler.transform(y)
-    valid_dataset = torch.utils.data.TensorDataset(
-        torch.tensor(x), torch.tensor(y)
-    )
+    valid_dataset = torch.utils.data.TensorDataset(torch.tensor(x), torch.tensor(y))
     train_dataloader = DataLoader(train_dataset,
                                   batch_size=batch_size,
                                   shuffle=True,
@@ -101,24 +97,23 @@ def main(use_pxyz: bool):
     likelihood.train()
 
     optimizer = torch.optim.Adam([
-        {'params': model.parameters()},
-        {'params': likelihood.parameters()},
-    ], lr=1e-2)
+        {
+            'params': model.parameters()
+        },
+        {
+            'params': likelihood.parameters()
+        },
+    ],
+                                 lr=1e-2)
 
-    mll = gpytorch.mlls.VariationalELBO(
-        likelihood,
-        model,
-        num_data=len(train_dataset)
-    )
+    mll = gpytorch.mlls.VariationalELBO(likelihood, model, num_data=len(train_dataset))
 
     for epoch in range(epochs):
         model.train()
         likelihood.train()
         train_data = tqdm(train_dataloader)
-        train_data.set_description(
-            f"[Epoch:{epoch+1:04d}/{epochs:04d} " +
-            f"lr:{optimizer.param_groups[0]['lr']:.5f}]"
-        )
+        train_data.set_description(f"[Epoch:{epoch+1:04d}/{epochs:04d} " +
+                                   f"lr:{optimizer.param_groups[0]['lr']:.5f}]")
         train_loss = 0.0
         for step, (train_x, train_y) in enumerate(train_data):
             # Within each iteration, we will go over each minibatch of data
@@ -146,9 +141,10 @@ def main(use_pxyz: bool):
         model_file_name = '../logs/GP_model_xyz.pt'
     else:
         model_file_name = '../logs/GP_model.pt'
-    torch.save({'model': model.state_dict(),
-                'likelihood': likelihood.state_dict()},
-               model_file_name)
+    torch.save({
+        'model': model.state_dict(),
+        'likelihood': likelihood.state_dict()
+    }, model_file_name)
 
 
 if __name__ == '__main__':

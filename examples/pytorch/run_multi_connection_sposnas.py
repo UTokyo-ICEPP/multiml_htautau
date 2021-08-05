@@ -21,15 +21,8 @@ else:
 @click.option('--load_weights', '-lw', type=bool, default=False)
 @click.option('--epoch', '-ep', type=int, default=100)
 @click.option('--nopretraining', '-np', type=bool, default=False)
-def main(conf: str,
-         seed: int,
-         gpu_index: int,
-         data_path: str,
-         event: int,
-         weight: float,
-         load_weights: bool,
-         epoch: int,
-         nopretraining: bool):
+def main(conf: str, seed: int, gpu_index: int, data_path: str, event: int, weight: float,
+         load_weights: bool, epoch: int, nopretraining: bool):
     global DEVICE
     from utils import load_config
     from run_utils import get_multi_loss, set_seed
@@ -89,8 +82,7 @@ def main(conf: str,
                 "optimizer_args": dict(lr=1e-3),
                 "variable_mapping": mapping_truth_corr,
                 "device": DEVICE,
-            }
-        )
+            })
 
     with timer(timer_reg, "execute"):
         agent.execute()
@@ -102,9 +94,6 @@ def main(conf: str,
         with open(f"{saver.save_dir}/timer.pkl", 'wb') as f:
             import pickle
             pickle.dump(timer_reg, f)
-    
-    
-    
 
 
 if __name__ == '__main__':

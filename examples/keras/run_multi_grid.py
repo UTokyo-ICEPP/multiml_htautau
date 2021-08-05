@@ -3,13 +3,16 @@ import os
 save_dir = f'output/{os.path.basename(__file__)[:-3]}'
 
 from run_utils import common_parser
+
 parser = common_parser()
 args = parser.parse_args()
 
 from run_utils import add_suffix
+
 save_dir = add_suffix(save_dir, args)
 
 from run_utils import preprocessing
+
 saver, storegate, task_scheduler, metric = preprocessing(
     save_dir=save_dir,
     args=args,
@@ -20,6 +23,7 @@ saver, storegate, task_scheduler, metric = preprocessing(
 
 # Time measurements
 from timer import timer
+
 timer_reg = {}
 
 # Agent
@@ -50,7 +54,8 @@ if not args.load_weights:
 result = agent.result
 
 task_scheduler.show_info()
-for task_id, subtask_id, params in zip(result['task_ids'], result['subtask_ids'], result['subtask_hps']):
+for task_id, subtask_id, params in zip(result['task_ids'], result['subtask_ids'],
+                                       result['subtask_hps']):
     subtask = task_scheduler.get_subtask(task_id=task_id, subtask_id=subtask_id)
     params.update(save_weights=False, load_weights=True, phases=['test'])
     subtask.env.set_hps(params)
@@ -59,7 +64,9 @@ for task_id, subtask_id, params in zip(result['task_ids'], result['subtask_ids']
 metric.storegate = storegate
 result_metric = metric.calculate()
 from multiml import logger
+
 logger.info(f'metric = {result_metric}')
 
 from run_utils import postprocessing
+
 postprocessing(saver, storegate, args, do_probability=True, do_tau4vec=True)

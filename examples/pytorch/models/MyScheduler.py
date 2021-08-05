@@ -9,7 +9,7 @@ class FlippedCosineSchedule(torch.optim.lr_scheduler.LambdaLR):
             raise
 
         def flipped_cosine(step):
-            coeff = (0.5 - np.cos(step * (2 * np.pi) / period) / 2.) * (eta_max - lr)/lr + 1.
+            coeff = (0.5 - np.cos(step * (2 * np.pi) / period) / 2.) * (eta_max - lr) / lr + 1.
             return coeff
 
         super(FlippedCosineSchedule, self).__init__(optimizer,
@@ -18,6 +18,7 @@ class FlippedCosineSchedule(torch.optim.lr_scheduler.LambdaLR):
 
 
 if __name__ == '__main__':
+
     class ToyModel(torch.nn.Module):
         def __init__(self, hidden_size):
             super(ToyModel, self).__init__()

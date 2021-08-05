@@ -19,8 +19,12 @@ logger = get_logger()
 
 
 class SPOS(nn.Module):
-    def __init__(self, task, loss_func, loss_weight=None,
-                 input_key='inputs', target_key='targets',
+    def __init__(self,
+                 task,
+                 loss_func,
+                 loss_weight=None,
+                 input_key='inputs',
+                 target_key='targets',
                  save_dir='',
                  **kwargs):
         super(SPOS, self).__init__(**kwargs)
@@ -28,11 +32,8 @@ class SPOS(nn.Module):
         self._loss_func = loss_func
         if loss_weight is None:
             self._loss_weight = np.ones(len(loss_func)) / len(loss_func)
-        if (isinstance(loss_weight, list)
-           or isinstance(loss_weight, np.ndarray)):
-            self._loss_weight = np.array(
-                [w if w else None for w in loss_weight]
-            )
+        if (isinstance(loss_weight, list) or isinstance(loss_weight, np.ndarray)):
+            self._loss_weight = np.array([w if w else None for w in loss_weight])
         self._task_candidate_len = [len(t) for t in task]
         self._choice_block = nn.ModuleList([])
         for t in self._task:
@@ -59,24 +60,16 @@ class SPOS(nn.Module):
             if layer_num == 0:
                 outputs.append(self._choice_block[layer_num][index](x))
             else:
-                outputs.append(
-                    self._choice_block[layer_num][index](outputs[-1])
-                )
+                outputs.append(self._choice_block[layer_num][index](outputs[-1]))
         return outputs, choice
 
-    def fit(self,
-            epochs,
-            dataloader,
-            device,
-            optimizer,
-            scheduler,
-            patience=3,
-            choice=None):
+    def fit(self, epochs, dataloader, device, optimizer, scheduler, patience=3, choice=None):
         self.to(device)
         logger.info(f'save at {self._save_path}')
         early_stopping = EarlyStopping(patience=patience,
                                        verbose=True,
-                                       path=self._save_path, save=True)
+                                       path=self._save_path,
+                                       save=True)
         sigmoid = nn.Sigmoid()
         metrics = Calc_Auc()
         for epoch in range(epochs):
@@ -85,19 +78,15 @@ class SPOS(nn.Module):
             dataloader.dataset.train()
             train_data = tqdm(dataloader)
             lr = scheduler.get_last_lr()[0]
-            train_data.set_description(
-                f'[Epoch:{epoch+1:04d}/{epochs:04d} lr:{lr:.5f}]'
-            )
+            train_data.set_description(f'[Epoch:{epoch+1:04d}/{epochs:04d} lr:{lr:.5f}]')
             for step, data in enumerate(train_data):
                 inputs = add_device(data[self._input_key], device)
                 targets = add_device(data[self._target_key], device)
                 optimizer.zero_grad()
                 outputs, now_choice = self.__call__(inputs, choice)
                 loss = 0.0
-                for criterion, weight, output, target in zip(self._loss_func,
-                                                             self._loss_weight,
-                                                             outputs,
-                                                             targets):
+                for criterion, weight, output, target in zip(self._loss_func, self._loss_weight,
+                                                             outputs, targets):
                     if weight is not None:
                         loss += criterion(output, target) * weight
                 loss.backward()
@@ -105,8 +94,7 @@ class SPOS(nn.Module):
                 scheduler.step()
                 train_loss += loss.item()
                 running_loss = train_loss / (step + 1)
-                postfix = {'train_loss': f'{running_loss:.5f}',
-                           'choice': f'{now_choice}'}
+                postfix = {'train_loss': f'{running_loss:.5f}', 'choice': f'{now_choice}'}
                 train_data.set_postfix(log=postfix)
             with torch.no_grad():
                 self.eval()
@@ -119,20 +107,13 @@ class SPOS(nn.Module):
                     targets = add_device(data[self._target_key], device)
                     outputs, now_choice = self.__call__(inputs, choice)
                     loss = 0.0
-                    for criterion, weight, output, target in zip(
-                            self._loss_func,
-                            self._loss_weight,
-                            outputs,
-                            targets
-                    ):
+                    for criterion, weight, output, target in zip(self._loss_func,
+                                                                 self._loss_weight, outputs,
+                                                                 targets):
                         if weight is not None:
                             loss += criterion(output, target) * weight
-                    outputs_data.extend(
-                        tensor_to_array(sigmoid(outputs[1]))
-                    )
-                    targets_data.extend(
-                        tensor_to_array(targets[1])
-                    )
+                    outputs_data.extend(tensor_to_array(sigmoid(outputs[1])))
+                    targets_data.extend(tensor_to_array(targets[1]))
                     valid_loss += loss.item()
                 targets_data = np.array(targets_data)
                 outputs_data = np.array(outputs_data)
@@ -141,11 +122,9 @@ class SPOS(nn.Module):
                     f'auc:{auc_score:.6f} / '\
                     f'loss:{valid_loss/(step+1):.6f}]'
                 logger.info(s)
-                _ = early_stopping(valid_loss/(step+1), self)
+                _ = early_stopping(valid_loss / (step + 1), self)
                 if early_stopping.early_stop:
                     logger.info("Early stopping")
                     break
 
-        self.load_state_dict(torch.load(
-            os.path.join(self._save_path, 'checkpoint.pt')
-        ))
+        self.load_state_dict(torch.load(os.path.join(self._save_path, 'checkpoint.pt')))
