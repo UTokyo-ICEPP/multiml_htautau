@@ -116,7 +116,7 @@ sub_task_params:
       verbose: 1
 ASNG:
   epochs: 100
-  batch_size: {'type':'equal_length', 'length':500, 'test' : 250}
+  batch_size: {'type':'equal_length', 'length':250, 'test' : 250}
   patience: 20
   tau4vec_tasks: ['conv2D', 'MLP', 'SF']
   higgsId_tasks: ['lstm', 'mlp', 'mass']

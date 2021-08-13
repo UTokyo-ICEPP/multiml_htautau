@@ -117,6 +117,7 @@ class Tau4vecCalibLoss_torch(object):
     def __init__(self,
                  pt_scale: float = 1e-2,
                  use_pxyz: bool = True,
+                 reduction: str = 'mean',
                  bound: Union[List[float], None] = None):
         """
         Args:
@@ -126,6 +127,8 @@ class Tau4vecCalibLoss_torch(object):
         """
         self._pt_scale = pt_scale
         self._use_pxyz = use_pxyz
+        self._reduction = reduction
+        
         if bound is None:
             import math
             pi = math.pi
@@ -158,6 +161,8 @@ class Tau4vecCalibLoss_torch(object):
             target (Tensor): target
         """
         from torch import cat
+        import torch
+        
         assert (output.shape[-1] == 3 * 2)
         assert (target.shape[-1] == 3 * 2)
         output = output.reshape(-1, 3)
@@ -166,10 +171,28 @@ class Tau4vecCalibLoss_torch(object):
         if self._use_pxyz:
             output = self._convert_to_pxyz(output)
             target = self._convert_to_pxyz(target)
-            return (target - output).pow(2).mean()
-
+            
+            if self._reduction == 'mean' : 
+                return (target - output).pow(2).mean()
+            elif self._reduction == 'sum' : 
+                return (target - output).pow(2).sum()
+            elif self._reduction == 'none' : 
+                tmp = (target - output).pow(2).reshape(-1, 6)
+                return torch.sum(tmp, dim = 1, keepdim = True)
+            else : 
+                raise ValueError(f'reduction {self._reduction} is not supported!!')
+            
         else:
             d_sq = (target - output).pow(2)
             d_phi = (self._delta_phi_torch(target[:, 2], output[:, 2])).pow(2)
             diff = cat([d_sq[:, 0:2], d_phi.unsqueeze(1)], axis=-1)
-            return diff.mean()
+
+            if self._reduction == 'mean' : 
+                return diff.mean()
+            elif self._reduction == 'sum' : 
+                return diff.sum()
+            elif self._reduction == 'none' : 
+                return diff
+            else : 
+                raise ValueError(f'reduction {self._reduction} is not supported!!')
+

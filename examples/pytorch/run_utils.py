@@ -4,7 +4,9 @@ def preprocessing(save_dir,
                   tau4vec_tasks=['MLP', 'conv2D', 'SF'],
                   higgsId_tasks=['mlp', 'lstm', 'mass'],
                   load_weights=False,
-                  truth_intermediate_inputs=True):
+                  truth_intermediate_inputs=True,
+                  is_yoto = False
+                  ):
 
     from multiml import logger
     logger.set_level(config.log_level)
@@ -32,7 +34,9 @@ def preprocessing(save_dir,
                                         subtask_names=higgsId_tasks,
                                         truth_input=truth_intermediate_inputs,
                                         load_weights=load_weights,
-                                        use_logits=True)
+                                        use_logits=True,
+                                        is_yoto = is_yoto,
+                                        )
         task_scheduler.add_task(task_id='higgsId',
                                 parents=['tau4vec'],
                                 children=[],
@@ -42,7 +46,9 @@ def preprocessing(save_dir,
                                         saver,
                                         subtask_names=tau4vec_tasks,
                                         device=device,
-                                        load_weights=load_weights)
+                                        load_weights=load_weights,
+                                        is_yoto = is_yoto,
+                                        )
 
         task_scheduler.add_task(task_id='tau4vec',
                                 parents=[],
@@ -51,11 +57,13 @@ def preprocessing(save_dir,
 
     elif len(higgsId_tasks) > 0:
         subtask = get_higgsId_subtasks(config.sub_task_params.higgsId,
-                                       saver,
-                                       device=device,
-                                       subtask_names=higgsId_tasks,
-                                       load_weights=load_weights,
-                                       use_logits=True)
+                                        saver,
+                                        device=device,
+                                        subtask_names=higgsId_tasks,
+                                        load_weights=load_weights,
+                                        use_logits=True,
+                                        is_yoto = is_yoto,
+                                        )
         task_scheduler.add_task(task_id='higgsId', subtasks=subtask)
 
     elif len(tau4vec_tasks) > 0:
@@ -63,7 +71,9 @@ def preprocessing(save_dir,
                                        saver,
                                        subtask_names=tau4vec_tasks,
                                        device=device,
-                                       load_weights=load_weights)
+                                       load_weights=load_weights,
+                                       is_yoto = is_yoto 
+                                       )
         task_scheduler.add_task(task_id='tau4vec', subtasks=subtask)
 
     else:

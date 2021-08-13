@@ -90,11 +90,10 @@ class _Tau4vec_Conv2DTask(Module):
     def forward(self, x):
         fig = x[0].reshape(-1, 3, 16, 16)
         x_1 = self._conv2d(fig)
-
         x_1 = x_1.reshape(x_1.size(0), -1)  # flatten
-
         x_1 = self._mlp1(x_1)
-
+        
+        
         input_jet_reshape_4 = x[1].reshape(-1, 4)
         input_jet_reshape_3 = input_jet_reshape_4[:, :3]  # mass is not used
 

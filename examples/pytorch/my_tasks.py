@@ -35,7 +35,8 @@ def get_higgsId_subtasks(config,
                          truth_input=True,
                          batch_norm=False,
                          load_weights=True,
-                         use_logits=True):
+                         use_logits=True,
+                         is_yoto = False ):
 
     subtasks = []
 
@@ -65,6 +66,11 @@ def get_higgsId_subtasks(config,
     else:
         higgsId_args['loss'] = 'BCELoss'
         activation_last = 'Sigmoid'
+        
+    if is_yoto : 
+        higgsId_args['loss_args'] = {'reduction':'none'}
+    else : 
+        higgsId_args['loss_args'] = {}
 
     if truth_input:
         higgsId_args['input_var_names'] = truth_tau_4vec
@@ -75,16 +81,24 @@ def get_higgsId_subtasks(config,
     for subtask_name in subtask_names:
         subtask = {}
         if subtask_name == 'mlp':
-            from multiml_htautau.task.pytorch import HiggsID_MLPTask
             conf = config.tasks.HiggsID_MLPTask
-            subtask['subtask_id'] = 'higgsId-mlp'
-            subtask['env'] = HiggsID_MLPTask(**higgsId_args)
-            subtask['hps'] = Hyperparameters({
-                'layers': conf.params.layers,
-                'activation': conf.params.activation,
-                'activation_last': conf.params.activation_last,
-                'batch_norm': conf.params.batch_norm,
-            })
+            if is_yoto : 
+                from multiml_htautau.task.pytorch import HiggsID_MLP_Yoto_Task
+                subtask['subtask_id'] = 'higgsId-mlp'
+                subtask['env'] = HiggsID_MLP_Yoto_Task( hps = conf.params, **higgsId_args)
+                subtask['hps'] = Hyperparameters()
+                
+            else : 
+                from multiml_htautau.task.pytorch import HiggsID_MLPTask
+
+                subtask['subtask_id'] = 'higgsId-mlp'
+                subtask['env'] = HiggsID_MLPTask(**higgsId_args)
+                subtask['hps'] = Hyperparameters({
+                    'layers': conf.params.layers,
+                    'activation': conf.params.activation,
+                    'activation_last': conf.params.activation_last,
+                    'batch_norm': conf.params.batch_norm,
+                })
 
         elif subtask_name == 'lstm':
             from multiml_htautau.task.pytorch import HiggsID_LSTMTask
@@ -129,7 +143,8 @@ def get_tau4vec_subtasks(config,
                          subtask_names=[],
                          device='cpu',
                          batch_norm=False,
-                         load_weights=True):
+                         load_weights=True,
+                         is_yoto = False ):
     subtasks = []
 
     save_dir = saver.save_dir
@@ -145,7 +160,6 @@ def get_tau4vec_subtasks(config,
         'input_njets': 2,
         'optimizer': conf.optimizer.name,
         'optimizer_args': dict(**conf.optimizer.params),
-        'loss': Tau4vecCalibLoss_torch(pt_scale=1e-2, use_pxyz=True),
         'num_epochs': conf.epochs,
         "max_patience": conf.patience,
         'batch_size': conf.batch_size,
@@ -157,6 +171,11 @@ def get_tau4vec_subtasks(config,
     if load_weights:
         tau4vec_args['load_weights'] = True
         tau4vec_args['phases'] = ['test']
+        
+    if is_yoto : 
+        tau4vec_args['loss'] = Tau4vecCalibLoss_torch(pt_scale=1e-2, use_pxyz=True, reduction = 'none')
+    else : 
+        tau4vec_args['loss'] = Tau4vecCalibLoss_torch(pt_scale=1e-2, use_pxyz=True)
 
     from multiml import Hyperparameters
     for subtask_name in subtask_names:
@@ -175,19 +194,24 @@ def get_tau4vec_subtasks(config,
             })
 
         elif subtask_name == 'conv2D':
-            from multiml_htautau.task.pytorch import Tau4vec_Conv2DTask
             conf = config.tasks.Tau4vec_Conv2DTask
-
-            subtask['subtask_id'] = 'tau4vec-conv2D'
-            subtask['env'] = Tau4vec_Conv2DTask(**tau4vec_args)
-            subtask['hps'] = Hyperparameters({
-                'layers_conv2d': conf.params.layers_conv2d,
-                'layers_images': conf.params.layers_images,
-                'layers_calib': conf.params.layers_calib,
-                'batch_norm': conf.params.batch_norm,
-                'activation': conf.params.activation,
-                'activation_last': conf.params.activation_last,
-            })
+            if is_yoto : 
+                from multiml_htautau.task.pytorch import Tau4vec_Conv2D_Yoto_Task
+                subtask['subtask_id'] = 'tau4vec-conv2D'
+                subtask['env'] = Tau4vec_Conv2D_Yoto_Task( hps = conf.params, layers_calib_last = conf.layers_calib_last, **tau4vec_args)
+                subtask['hps'] = Hyperparameters()
+            else : 
+                from multiml_htautau.task.pytorch import Tau4vec_Conv2DTask
+                subtask['subtask_id'] = 'tau4vec-conv2D'
+                subtask['env'] = Tau4vec_Conv2DTask(**tau4vec_args)
+                subtask['hps'] = Hyperparameters({
+                    'layers_conv2d': conf.params.layers_conv2d,
+                    'layers_images': conf.params.layers_images,
+                    'layers_calib': conf.params.layers_calib,
+                    'batch_norm': conf.params.batch_norm,
+                    'activation': conf.params.activation,
+                    'activation_last': conf.params.activation_last,
+                })
 
         elif subtask_name == 'SF':
             from multiml_htautau.task.pytorch import Tau4vec_SFTask

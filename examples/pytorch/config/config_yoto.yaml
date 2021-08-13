@@ -1,0 +1,168 @@
+seed: &seed 0
+#log_level: 40 # ERROR
+log_level: 20
+
+amp: False
+num_workers: 1
+
+
+dataset:
+  name: OnlyDiTauDataset_wo_mass
+  params:
+    # max_events is 50000 + 50000 events
+    max_events: 50000
+    data_path: '/data/saito/dataset/onlyDiTau/'
+
+n_jets: &n_jets 2
+n_intermediate_vars: &n_intermediate_vars 6
+
+sub_task_params:
+  tau4vec:
+    tasks:
+      Tau4vec_Conv2DTask:
+        layers_calib_last: 3
+        params:
+          conv2d: 
+            - key: ConvResBlock1
+              args: 
+                in_plane: 3
+                out_plane: 64
+                activation: {key: ReLU, args: {}}
+                conv_args: 
+                  - {kernel_size: 3, stride: 1, padding: 1, bias: False }
+                  - {kernel_size: 3, stride: 1, padding: 1, bias: False }
+            - key: ConvResBlock2
+              args: 
+                in_plane: 64
+                out_plane: 64
+                activation: {key: ReLU, args: {}}
+                conv_args: 
+                  - {kernel_size: 3, stride: 1, padding: 1, bias: False }
+                  - {kernel_size: 3, stride: 1, padding: 1, bias: False }
+            - key: activation
+              args: {name: AdaptiveAvgPool2d, output_size: 1}
+          mlp1: 
+            - key: FiLMed_MLPBlock1
+              args: {n_input: 64, n_output: 64, activation: {key: ReLU, args: {}}, dropout_rate : 0.1 }
+            - key: FiLMed_MLPBlock2
+              args: {n_input: 64, n_output: 64, activation: {key: ReLU, args: {}}, dropout_rate : 0.1 }
+            - key: Linear1
+              args: {in_features: 64, out_features: 4, bias: False}
+            - key: activation
+              args: {name: ReLU}
+          mlp2: 
+            - key: FiLMed_MLPBlock1
+              args: {n_input: 8, n_output: 64, activation: {key: ReLU, args: {}}, dropout_rate : 0.1 }
+            - key: FiLMed_MLPBlock2
+              args: {n_input: 64, n_output: 64, activation: {key: ReLU, args: {}}, dropout_rate : 0.1 }
+            - key: Linear1
+              args: {in_features: 64, out_features: 3, bias: False}
+            - key: activation
+              args: {name: ReLU}
+    
+    pretrain:
+      epochs: 100
+      patience: 10
+      batch_size: 128
+      optimizer:
+        name: Adam
+        params:
+          lr: 1.0e-3
+      loss_func:
+        name: Tau4vecCalibLoss_torch
+      metrics:
+        name: Calc_R2
+        params:
+          multioutput: variance_weighted
+      activation:
+        name: False
+      data:
+        input_key: inputs
+        target_key: internal_vec
+      verbose: 1
+  higgsId:
+    tasks:
+      HiggsID_MLPTask:
+        params:
+          - key: FiLMed_MLPBlock0
+            args: {n_input: 6, n_output: 64, activation: {key: ReLU, args: {} }, dropout_rate : 0.1 }
+          - key: ResBlock1
+            args : 
+              - {n_input: 64, n_output: 64, activation: {key: ReLU, args:{}}, dropout_rate : 0.1}
+              - {n_input: 64, n_output: 64, activation: {key: ReLU, args:{}}, dropout_rate : 0.1}
+              - {n_input: 64, n_output: 64, activation: {key: ReLU, args:{}}, dropout_rate : 0.1}
+          - key: FiLMed_MLPBlock1
+            args: {n_input: 64, n_output: 64, activation: {key: ReLU, args: {} }, dropout_rate : 0.1 }
+          - key: Linear1
+            args: {in_features: 64, out_features: 1, bias: False}
+          - key : activation
+            args: {name: Sigmoid}
+          
+    pretrain:
+      epochs: 100
+      patience: 10
+      batch_size: 128
+      optimizer:
+        name: Adam
+        params:
+          lr: 1.0e-3
+      loss_func:
+        name: BCEWithLogitsLoss
+      metrics:
+        name: Calc_Auc
+      activation:
+        name: False
+      data:
+        input_key: internal_vec
+        target_key: internal_label
+      verbose: 1
+Yoto:
+  epochs: 200
+  batch_size: 256
+  patience: 200
+  tau4vec_tasks: ['conv2D']
+  higgsId_tasks: ['mlp']
+  loss_first:
+    name: Tau4vecCalibLoss_torch
+  loss_second:
+    name: BCEWithLogitsLoss
+  optimizer:
+    name: Adam
+    params:
+      lr: 1.0e-3
+  scheduler:
+    name: MultiStepLR
+    params:
+      milestones: [40, 60, 80, 100, 140, 180, 200]
+      gamma: 0.2
+  data:
+    input_key: inputs
+    target_key: targets
+  model_args : 
+    valid_lambdas: [0.5]
+    dropout: 0.1
+    common_hiddens: [8, 16, 32]
+    layer_hiddens: [4, 2]
+    sampler_args: 
+      ranges: [[0.0, 1.0]]
+      init: [0.5]
+      dist: uniform
+  eval_lambdas: [[0.001], [0.1], [0.2], [0.3], [0.4], [0.5], [0.6], [0.7], [0.8], [0.9], [0.999]]
+  connectiontask_args:
+    num_epochs: 100
+    max_patience: 20
+    batch_size: 100
+    load_weights: False
+    optimizer: 'Adam'
+    optimizer_args: 
+      lr: 1.0e-3
+    scheduler: MultiStepLR
+    scheduler_args:
+      milestones: [10, 20, 40, 60, 80, 100]
+      gamma: 1.0
+    verbose: 1
+    metrics: ['loss', 'subloss']
+    phases: ['train', 'valid']
+    variable_mapping: None
+    device: None
+
