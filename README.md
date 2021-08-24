@@ -1,5 +1,5 @@
 # multiml_htautau
-*multiml_htautau* is a code for "Event Classification with Multi-step Machine Learning" in vCHEP 2021.
+*multiml_htautau* is a code for [Event Classification with Multi-step Machine Learning](https://www.epj-conferences.org/articles/epjconf/abs/2021/05/epjconf_chep2021_03036/epjconf_chep2021_03036.html)([arxiv](https://arxiv.org/abs/2106.02301)) in vCHEP 2021.
 
 ## Dependency
 multiml (https://github.com/UTokyo-ICEPP/multiml)
